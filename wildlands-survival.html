@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wildlands Survival</title>
+  <style>
+    :root {
+      --bg: #0c120f;
+      --panel: rgba(14, 20, 17, 0.76);
+      --panelBorder: rgba(255,255,255,0.12);
+      --text: #edf3e2;
+      --muted: rgba(237,243,226,0.72);
+      --accent: #c4d69c;
+      --danger: #d4866d;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100%; background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif; overflow: hidden;
+    }
+    body {
+      display: grid; place-items: center;
+      background: radial-gradient(circle at top, #23402d 0%, #0f1613 34%, #090d0c 100%);
+    }
+    .frame {
+      position: relative; width: min(96vw, 1200px); height: min(92vh, 760px);
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 30px 60px rgba(0,0,0,.42), inset 0 0 40px rgba(255,255,255,.03);
+      background: #111;
+    }
+    canvas {
+      width: 100%; height: 100%; display: block; background: #181d1a;
+      image-rendering: auto;
+    }
+    .hud {
+      position: absolute; inset: 0; pointer-events: none; z-index: 2;
+      background: linear-gradient(180deg, rgba(0,0,0,0.28), rgba(0,0,0,0) 18%, rgba(0,0,0,0) 68%, rgba(0,0,0,0.42));
+    }
+    .topbar, .bottombar {
+      position: absolute; left: 18px; right: 18px; display: flex; align-items: center; justify-content: space-between;
+      color: var(--text); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    }
+    .topbar { top: 18px; }
+    .bottombar { bottom: 18px; }
+    .panel {
+      background: rgba(13, 20, 17, 0.56); border: 1px solid var(--panelBorder); backdrop-filter: blur(5px);
+      padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.22);
+    }
+    .stats {
+      display: flex; gap: 18px; align-items: center;
+    }
+    .meter {
+      display: flex; align-items: center; gap: 8px; min-width: 150px;
+    }
+    .bar-shell {
+      position: relative; width: 110px; height: 8px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.08);
+      overflow: hidden;
+    }
+    .bar-fill {
+      position: absolute; inset: 0 auto 0 0; width: 100%; background: linear-gradient(90deg, #a7d8a0, #d9d495);
+    }
+    .bar-fill.health { background: linear-gradient(90deg, #d67e6a, #ffb38f); }
+    .bar-fill.stamina { background: linear-gradient(90deg, #a1d75f, #d8f0a0); }
+    .crosshair {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 24px; height: 24px; opacity: 0.9;
+    }
+    .crosshair::before, .crosshair::after, .crosshair span::before, .crosshair span::after {
+      content: ''; position: absolute; background: rgba(255,255,255,.92); box-shadow: 0 0 8px rgba(255,255,255,.6);
+    }
+    .crosshair::before { width: 1px; height: 24px; left: 11.5px; top: 0; }
+    .crosshair::after { width: 24px; height: 1px; left: 0; top: 11.5px; }
+    .crosshair span::before { width: 10px; height: 1px; left: 7px; top: 11.5px; }
+    .crosshair span::after { width: 1px; height: 10px; left: 11.5px; top: 7px; }
+    .title {
+      font-size: 11px; color: rgba(255,255,255,.8); letter-spacing: .18em; text-transform: uppercase;
+      padding: 10px 14px; border: 1px solid rgba(255,255,255,.14); background: rgba(14,20,17,.4);
+    }
+    .toast {
+      position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); opacity: 0; transition: opacity .2s ease; background: rgba(17,24,20,.7);
+      border: 1px solid rgba(255,255,255,.1); padding: 12px 18px; letter-spacing: .15em; text-transform: uppercase; font-size: 10px; color: var(--text);
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+    .overlay {
+      position: absolute; inset: 0; display: grid; place-items: center; background: linear-gradient(90deg, rgba(8, 12, 10, .8), rgba(8, 12, 10, .38));
+      z-index: 4;
+    }
+    .overlay.hidden { display: none; }
+    .card {
+      width: min(560px, 82vw); padding: 28px 28px 20px; background: rgba(17, 23, 20, .8); border: 1px solid rgba(255,255,255,.14); box-shadow: 0 20px 44px rgba(0,0,0,.28);
+    }
+    .eyebrow { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.72); }
+    h1 {
+      margin: 16px 0 14px; line-height: .9; font-weight: 700; letter-spacing: -.06em; font-size: clamp(52px, 6vw, 98px);
+    }
+    h1 small { display: block; color: #ccd9af; font-weight: 500; }
+    .lead { max-width: 440px; color: rgba(255,255,255,.75); line-height: 1.75; font-size: 13px; }
+    button {
+      margin-top: 26px; appearance: none; border: 0; cursor: pointer; padding: 14px 18px; background: #d7e1ad; color: #111812; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; font-size: 11px;
+      box-shadow: 0 12px 30px rgba(175,202,124,.22);
+    }
+    @media (max-width: 680px) {
+      .topbar, .bottombar { left: 10px; right: 10px; }
+      .stats { gap: 8px; }
+      .bottombar .panel { display: none; }
+      .title { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <canvas id="game"></canvas>
+    <div class="hud">
+      <div class="topbar">
+        <div class="panel">WILDLANDS // FIELD REPORT 01</div>
+        <div class="stats panel">
+          <div class="meter"><span>HP</span><div class="bar-shell"><div class="bar-fill health" id="hpBar" style="width: 100%"></div></div></div>
+          <div class="meter"><span>STAM</span><div class="bar-shell"><div class="bar-fill stamina" id="staminaBar" style="width: 100%"></div></div></div>
+        </div>
+      </div>
+      <div class="bottombar">
+        <div class="title">North Cascade // survival // day <span id="dayLabel">01</span></div>
+        <div class="panel">Controls: <strong>WASD</strong> // <strong>Shift</strong> // <strong>Space</strong> // <strong>Click</strong></div>
+      </div>
+      <div class="crosshair"><span></span></div>
+      <div class="toast" id="toast"></div>
+    </div>
+    <div class="overlay" id="intro">
+      <div class="card">
+        <div class="eyebrow">Field Journal // Uncharted Forest</div>
+        <h1>Wildlands <small>Survival</small></h1>
+        <div class="lead">Wake up in the tree line, keep moving, and survive the long night. The forest is alive, the fog is heavy, and the shadows have a habit of moving first.</div>
+        <button id="startBtn">Enter the Wilds</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const toast = document.getElementById('toast');
+    const hpBar = document.getElementById('hpBar');
+    const staminaBar = document.getElementById('staminaBar');
+    const dayLabel = document.getElementById('dayLabel');
+    const intro = document.getElementById('intro');
+    const startBtn = document.getElementById('startBtn');
+
+    const map = [
+      "############################",
+      "#..............#...........#",
+      "#..###........#.....#.....##",
+      "#......##.....#.....#......#",
+      "#..#..........#....#.......#",
+      "#..#..######..#....#..#....#",
+      "#.............#....#..#....#",
+      "#..##......###....#..#....##",
+      "#............#....#........#",
+      "#..####.......#....#.......#",
+      "#......#.......#...#.......#",
+      "#......#.......#....#......#",
+      "#......#.......###..#......#",
+      "#......#....................#",
+      "#........................##",
+      "############################"
+    ];
+
+    const mapW = map[0].length;
+    const mapH = map.length;
+    const cell = 1;
+    const wallTextures = [];
+    const createWallTexture = (colorA, colorB, accent) => {
+      const t = document.createElement('canvas');
+      t.width = t.height = 64;
+      const g = t.getContext('2d');
+      for (let y = 0; y < 64; y++) {
+        for (let x = 0; x < 64; x++) {
+          const v = Math.random();
+          if (v > 0.83) g.fillStyle = accent;
+          else if (v > 0.68) g.fillStyle = colorB;
+          else g.fillStyle = colorA;
+          g.fillRect(x, y, 1, 1);
+        }
+      }
+      for (let i = 0; i < 500; i++) {
+        const x = Math.random() * 64;
+        const y = Math.random() * 64;
+        g.fillStyle = 'rgba(0,0,0,0.18)';
+        g.fillRect(x, y, 2 + Math.random() * 4, 2 + Math.random() * 4);
+      }
+      return t;
+    };
+
+    wallTextures.push(createWallTexture('#4b5a45', '#69775d', '#7f8d73'));
+    wallTextures.push(createWallTexture('#6d5847', '#8c775f', '#a98a67'));
+    wallTextures.push(createWallTexture('#686d75', '#8a8d8d', '#9ea3a1'));
+    wallTextures.push(createWallTexture('#4f5d4d', '#697c63', '#839a7b'));
+
+    const player = {
+      x: 3.5,
+      y: 3.5,
+      a: 0.5,
+      health: 100,
+      stamina: 100,
+      sprinting: false,
+      attackCooldown: 0,
+      meleeRange: 2.4,
+      attackFlash: 0,
+      win: false,
+      time: 0.2,
+      day: 1
+    };
+
+    const enemies = [
+      { x: 8.5, y: 3.5, hp: 3, alive: true, phase: 0 },
+      { x: 12.2, y: 6.2, hp: 3, alive: true, phase: 1.6 },
+      { x: 4.8, y: 10.8, hp: 3, alive: true, phase: 2.1 },
+      { x: 10.4, y: 12.1, hp: 3, alive: true, phase: 0.8 }
+    ];
+
+    const keys = {};
+    let started = false;
+    let pointerLocked = false;
+    let lastFrame = performance.now();
+    let timeThen = performance.now();
+    const audio = {};
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.remove('show'), 1600);
+    }
+
+    function createTone(freq, duration, type = 'sine', gain = 0.04) {
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) return;
+      if (!audio.ctx) audio.ctx = new AudioCtor();
+      const ctxAudio = audio.ctx;
+      if (ctxAudio.state === 'suspended') ctxAudio.resume();
+      const osc = ctxAudio.createOscillator();
+      const g = ctxAudio.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      g.gain.value = gain;
+      osc.connect(g);
+      g.connect(ctxAudio.destination);
+      osc.start();
+      osc.stop(ctxAudio.currentTime + duration);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctxAudio.currentTime + duration);
+    }
+
+    function soundAttack() {
+      createTone(110, 0.12, 'sawtooth', 0.055);
+      createTone(70, 0.22, 'triangle', 0.028);
+    }
+
+    function soundHit() {
+      createTone(65, 0.16, 'square', 0.04);
+    }
+
+    function soundDamage() {
+      createTone(38, 0.2, 'sawtooth', 0.05);
+    }
+
+    function wallAt(x, y) {
+      const ix = Math.floor(x);
+      const iy = Math.floor(y);
+      if (ix < 0 || iy < 0 || ix >= mapW || iy >= mapH) return '#';
+      return map[iy][ix];
+    }
+
+    function castRay(rayAngle) {
+      const sinA = Math.sin(rayAngle), cosA = Math.cos(rayAngle);
+      const dist = 0;
+      let step = 0.02;
+      let x = player.x, y = player.y;
+      let hit = false; let wallType = 0; let hitX = 0; let hitY = 0;
+      for (let d = 0; d < 22; d += step) {
+        x = player.x + cosA * d;
+        y = player.y + sinA * d;
+        const c = wallAt(x, y);
+        if (c === '#') {
+          hit = true;
+          hitX = x;
+          hitY = y;
+          wallType = (Math.floor(x) + Math.floor(y)) % wallTextures.length;
+          break;
+        }
+      }
+      if (!hit) return null;
+      const distance = Math.hypot(hitX - player.x, hitY - player.y);
+      const wallX = hitX - Math.floor(hitX);
+      return { distance, wallType, wallX };
+    }
+
+    function renderSky(now) {
+      const w = canvas.width; const h = canvas.height;
+      const phase = (Math.sin((player.time * 0.12) + 1.1) + 1) * 0.5;
+      const skyTop = `hsl(${200 + phase * 18}, ${40 + phase * 18}%, ${22 + phase * 18}%)`;
+      const skyMid = `hsl(${190 + phase * 14}, ${30 + phase * 10}%, ${52 + phase * 25}%)`;
+      const skyBottom = `hsl(${55 + phase * 10}, ${40 + phase * 12}%, ${58 + phase * 12}%)`;
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, skyTop);
+      g.addColorStop(0.38, skyMid);
+      g.addColorStop(1, skyBottom);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+
+      const sunX = w * (0.18 + 0.64 * phase);
+      const sunY = h * (0.14 + (1 - phase) * 0.34);
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255, 214, 135, ${0.16 + phase * 0.8})`;
+      ctx.arc(sunX, sunY, 58, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255, 233, 175, ${0.32 + phase * 0.7})`;
+      ctx.arc(sunX, sunY, 28, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function renderGroundAndFog() {
+      const w = canvas.width; const h = canvas.height;
+      const floor = ctx.createLinearGradient(0, h * 0.5, 0, h);
+      floor.addColorStop(0, 'rgba(34, 39, 36, 0.25)');
+      floor.addColorStop(1, 'rgba(14,17,16,0.72)');
+      ctx.fillStyle = floor;
+      ctx.fillRect(0, h * 0.5, w, h * 0.5);
+
+      for (let i = 0; i < 70; i++) {
+        const alpha = 0.02 + (i / 70) * 0.08;
+        ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(Math.random() * w, h * 0.52 + Math.random() * h * 0.46);
+        ctx.lineTo(Math.random() * w, h * 0.52 + Math.random() * h * 0.46);
+        ctx.stroke();
+      }
+    }
+
+    function renderWalls() {
+      const w = canvas.width; const h = canvas.height;
+      const fov = Math.PI / 3;
+      const rays = 210;
+      for (let i = 0; i < rays; i++) {
+        const rayA = player.a - fov / 2 + (i / rays) * fov;
+        const hit = castRay(rayA);
+        if (!hit) continue;
+        const dist = hit.distance * Math.cos(rayA - player.a);
+        const wallHeight = Math.min(h * 0.95, (h * 0.9) / Math.max(0.15, dist));
+        const x = (i / rays) * w;
+        const slice = w / rays;
+
+        const tex = wallTextures[hit.wallType % wallTextures.length];
+        const tx = Math.floor((hit.wallX % 1) * 64) % 64;
+        const grd = ctx.createLinearGradient(0, h / 2 - wallHeight / 2, 0, h / 2 + wallHeight / 2);
+        const base = (1 / Math.max(0.2, dist / 10)) * 0.7;
+        const shade = Math.max(0.15, 1 - dist / 18);
+        const c = Math.floor(255 * shade);
+        grd.addColorStop(0, `rgba(${c}, ${c}, ${c}, ${0.92})`);
+        grd.addColorStop(1, `rgba(${Math.max(0, c - 55)}, ${Math.max(0, c - 55)}, ${Math.max(0, c - 55)}, ${0.9})`);
+        ctx.fillStyle = grd;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, h / 2 - wallHeight / 2, slice + 1, wallHeight);
+        ctx.clip();
+        ctx.drawImage(tex, tx, 0, 1, tex.height, x, h / 2 - wallHeight / 2, slice + 1, wallHeight);
+        ctx.restore();
+      }
+    }
+
+    function drawSprite(sprite, scale) {
+      const dx = sprite.x - player.x;
+      const dy = sprite.y - player.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 0.2) return;
+      const angleTo = Math.atan2(dy, dx);
+      let a = angleTo - player.a;
+      while (a < -Math.PI) a += Math.PI * 2;
+      while (a > Math.PI) a -= Math.PI * 2;
+      if (Math.abs(a) > Math.PI / 2 + 0.5) return;
+      const screenX = ((a + Math.PI / 2) / (Math.PI / 1.4)) * canvas.width;
+      const size = Math.max(18, canvas.height / (dist * 2.2));
+
+      const px = canvas.width * 0.5 + (screenX - canvas.width * 0.5) * (1.1);
+      const py = canvas.height * 0.5 + 10;
+
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.scale(1, 1);
+      ctx.fillStyle = '#0c100f';
+      ctx.globalAlpha = Math.max(0.1, 1 - dist / 16);
+      ctx.fillRect(-size * 0.28, -size * 0.5, size * 0.56, size);
+      ctx.fillStyle = '#707a68';
+      ctx.fillRect(-size * 0.22, -size * 0.42, size * 0.44, size * 0.72);
+      ctx.fillStyle = '#c7bca4';
+      ctx.beginPath();
+      ctx.arc(0, -size * 0.2, size * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawEnemies() {
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        drawSprite({ x: e.x, y: e.y }, 1);
+      }
+    }
+
+    function updatePlayer(dt) {
+      const moveSpeed = 2.4; const sprintBonus = 1.6;
+      let dx = 0, dy = 0;
+      const forwardX = Math.cos(player.a); const forwardY = Math.sin(player.a);
+      const strafeX = Math.cos(player.a + Math.PI / 2); const strafeY = Math.sin(player.a + Math.PI / 2);
+      if (keys['KeyW']) { dx += forwardX; dy += forwardY; }
+      if (keys['KeyS']) { dx -= forwardX; dy -= forwardY; }
+      if (keys['KeyA']) { dx += strafeX; dy += strafeY; }
+      if (keys['KeyD']) { dx -= strafeX; dy -= strafeY; }
+      const len = Math.hypot(dx, dy);
+      const sprinting = (keys['ShiftLeft'] || keys['ShiftRight']) && player.stamina > 5 && len > 0;
+      const speed = (sprinting ? moveSpeed * 1.8 : moveSpeed) * dt * 60;
+      if (len > 0) {
+        dx /= len; dy /= len;
+        const nx = player.x + dx * speed;
+        const ny = player.y + dy * speed;
+        if (wallAt(nx, player.y) !== '#') player.x = nx;
+        if (wallAt(player.x, ny) !== '#') player.y = ny;
+      }
+      if (sprinting) player.stamina = Math.max(0, player.stamina - 25 * dt);
+      else player.stamina = Math.min(100, player.stamina + 12 * dt);
+      player.attackCooldown = Math.max(0, player.attackCooldown - dt);
+      player.attackFlash = Math.max(0, player.attackFlash - dt * 2);
+      player.time += dt;
+      player.day = 1 + Math.floor(player.time / 30);
+      dayLabel.textContent = String(player.day).padStart(2, '0');
+      hpBar.style.width = player.health + '%';
+      staminaBar.style.width = player.stamina + '%';
+    }
+
+    function findNearestEnemy() {
+      let best = null;
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        const d = Math.hypot(e.x - player.x, e.y - player.y);
+        if (d < 2.2 && (!best || d < best.d)) best = { e, d };
+      }
+      return best;
+    }
+
+    function attack() {
+      if (!started || player.attackCooldown > 0) return;
+      player.attackCooldown = 0.42;
+      player.attackFlash = 1;
+      soundAttack();
+      const best = findNearestEnemy();
+      if (best) {
+        best.e.hp -= 1;
+        if (best.e.hp <= 0) {
+          best.e.alive = false;
+          showToast('Threat neutralized');
+          soundHit();
+        } else {
+          showToast('Hit');
+          soundHit();
+        }
+      } else {
+        showToast('Miss');
+      }
+    }
+
+    function updateEnemies(dt) {
+      for (const e of enemies) {
+        if (!e.alive) continue;
+        const dx = player.x - e.x;
+        const dy = player.y - e.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 7) {
+          const speed = 0.7 * dt * 60;
+          const nx = e.x + (dx / d) * speed * 0.4;
+          const ny = e.y + (dy / d) * speed * 0.4;
+          if (wallAt(nx, e.y) !== '#') e.x = nx;
+          if (wallAt(e.x, ny) !== '#') e.y = ny;
+          if (d < 1.2) {
+            player.health = Math.max(0, player.health - 10 * dt);
+            if (player.health <= 0) {
+              intro.classList.remove('hidden');
+              intro.querySelector('.card').innerHTML = '<div class="eyebrow">Field Journal // Entry Ended</div><h1>Lost to<br><small>the wild</small></h1><div class="lead">The forest gave you no second chance. Press below to try again.</div><button id="restartBtn">Try Again</button>';
+              document.getElementById('restartBtn').addEventListener('click', () => location.reload());
+              soundDamage();
+            }
+          }
+        }
+      }
+    }
+
+    function loop(ts) {
+      const dt = Math.min((ts - lastFrame) / 1000, 0.05);
+      lastFrame = ts;
+      if (started) {
+        updatePlayer(dt);
+        updateEnemies(dt);
+      }
+
+      renderSky(ts);
+      renderWalls();
+      drawEnemies();
+      renderGroundAndFog();
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.fillRect(0, canvas.height * 0.66, canvas.width, canvas.height * 0.34);
+      if (started) {
+        if (player.health <= 0) {
+          // death screen handled in overlay
+        }
+      }
+      requestAnimationFrame(loop);
+    }
+
+    function resize() {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.round(rect.width * ratio);
+      canvas.height = Math.round(rect.height * ratio);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+    }
+
+    function startGame() {
+      started = true;
+      intro.classList.add('hidden');
+      showToast('Survive the night');
+      createTone(180, 0.2, 'triangle', 0.04);
+    }
+
+    startBtn.addEventListener('click', startGame);
+    canvas.addEventListener('click', () => {
+      if (started) attack();
+      else startGame();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      if (e.code === 'Space') {
+        e.preventDefault();
+      }
+      if (e.code === 'KeyE') {
+        attack();
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!started || !pointerLocked) return;
+      player.a += e.movementX * 0.0024;
+    });
+
+    canvas.addEventListener('pointerdown', () => {
+      if (document.pointerLockElement !== canvas) {
+        canvas.requestPointerLock();
+      }
+      if (started) attack();
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      pointerLocked = document.pointerLockElement === canvas;
+    });
+
+    window.addEventListener('resize', resize);
+    resize();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
