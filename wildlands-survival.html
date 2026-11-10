@@ -1,575 +1,80 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wildlands Survival</title>
-  <style>
-    :root {
-      --bg: #0c120f;
-      --panel: rgba(14, 20, 17, 0.76);
-      --panelBorder: rgba(255,255,255,0.12);
-      --text: #edf3e2;
-      --muted: rgba(237,243,226,0.72);
-      --accent: #c4d69c;
-      --danger: #d4866d;
-    }
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0; height: 100%; background: var(--bg); color: var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, sans-serif; overflow: hidden;
-    }
-    body {
-      display: grid; place-items: center;
-      background: radial-gradient(circle at top, #23402d 0%, #0f1613 34%, #090d0c 100%);
-    }
-    .frame {
-      position: relative; width: min(96vw, 1200px); height: min(92vh, 760px);
-      border: 1px solid rgba(255,255,255,0.18);
-      box-shadow: 0 30px 60px rgba(0,0,0,.42), inset 0 0 40px rgba(255,255,255,.03);
-      background: #111;
-    }
-    canvas {
-      width: 100%; height: 100%; display: block; background: #181d1a;
-      image-rendering: auto;
-    }
-    .hud {
-      position: absolute; inset: 0; pointer-events: none; z-index: 2;
-      background: linear-gradient(180deg, rgba(0,0,0,0.28), rgba(0,0,0,0) 18%, rgba(0,0,0,0) 68%, rgba(0,0,0,0.42));
-    }
-    .topbar, .bottombar {
-      position: absolute; left: 18px; right: 18px; display: flex; align-items: center; justify-content: space-between;
-      color: var(--text); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
-    }
-    .topbar { top: 18px; }
-    .bottombar { bottom: 18px; }
-    .panel {
-      background: rgba(13, 20, 17, 0.56); border: 1px solid var(--panelBorder); backdrop-filter: blur(5px);
-      padding: 10px 12px; box-shadow: 0 8px 24px rgba(0,0,0,.22);
-    }
-    .stats {
-      display: flex; gap: 18px; align-items: center;
-    }
-    .meter {
-      display: flex; align-items: center; gap: 8px; min-width: 150px;
-    }
-    .bar-shell {
-      position: relative; width: 110px; height: 8px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.08);
-      overflow: hidden;
-    }
-    .bar-fill {
-      position: absolute; inset: 0 auto 0 0; width: 100%; background: linear-gradient(90deg, #a7d8a0, #d9d495);
-    }
-    .bar-fill.health { background: linear-gradient(90deg, #d67e6a, #ffb38f); }
-    .bar-fill.stamina { background: linear-gradient(90deg, #a1d75f, #d8f0a0); }
-    .crosshair {
-      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 24px; height: 24px; opacity: 0.9;
-    }
-    .crosshair::before, .crosshair::after, .crosshair span::before, .crosshair span::after {
-      content: ''; position: absolute; background: rgba(255,255,255,.92); box-shadow: 0 0 8px rgba(255,255,255,.6);
-    }
-    .crosshair::before { width: 1px; height: 24px; left: 11.5px; top: 0; }
-    .crosshair::after { width: 24px; height: 1px; left: 0; top: 11.5px; }
-    .crosshair span::before { width: 10px; height: 1px; left: 7px; top: 11.5px; }
-    .crosshair span::after { width: 1px; height: 10px; left: 11.5px; top: 7px; }
-    .title {
-      font-size: 11px; color: rgba(255,255,255,.8); letter-spacing: .18em; text-transform: uppercase;
-      padding: 10px 14px; border: 1px solid rgba(255,255,255,.14); background: rgba(14,20,17,.4);
-    }
-    .toast {
-      position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); opacity: 0; transition: opacity .2s ease; background: rgba(17,24,20,.7);
-      border: 1px solid rgba(255,255,255,.1); padding: 12px 18px; letter-spacing: .15em; text-transform: uppercase; font-size: 10px; color: var(--text);
-      white-space: nowrap;
-    }
-    .toast.show { opacity: 1; }
-    .overlay {
-      position: absolute; inset: 0; display: grid; place-items: center; background: linear-gradient(90deg, rgba(8, 12, 10, .8), rgba(8, 12, 10, .38));
-      z-index: 4;
-    }
-    .overlay.hidden { display: none; }
-    .card {
-      width: min(560px, 82vw); padding: 28px 28px 20px; background: rgba(17, 23, 20, .8); border: 1px solid rgba(255,255,255,.14); box-shadow: 0 20px 44px rgba(0,0,0,.28);
-    }
-    .eyebrow { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.72); }
-    h1 {
-      margin: 16px 0 14px; line-height: .9; font-weight: 700; letter-spacing: -.06em; font-size: clamp(52px, 6vw, 98px);
-    }
-    h1 small { display: block; color: #ccd9af; font-weight: 500; }
-    .lead { max-width: 440px; color: rgba(255,255,255,.75); line-height: 1.75; font-size: 13px; }
-    button {
-      margin-top: 26px; appearance: none; border: 0; cursor: pointer; padding: 14px 18px; background: #d7e1ad; color: #111812; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; font-size: 11px;
-      box-shadow: 0 12px 30px rgba(175,202,124,.22);
-    }
-    @media (max-width: 680px) {
-      .topbar, .bottombar { left: 10px; right: 10px; }
-      .stats { gap: 8px; }
-      .bottombar .panel { display: none; }
-      .title { display: none; }
-    }
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#101813"><title>WILDLANDS — Last Flight</title>
+<style>
+:root{--ink:#edf0df;--muted:#aab3a0;--moss:#c5d49e;--glass:rgba(13,20,16,.78);--line:rgba(234,239,218,.18)}*{box-sizing:border-box}html,body,#game{margin:0;width:100%;height:100%;overflow:hidden;background:#19241d;color:var(--ink);font-family:Inter,system-ui,Arial,sans-serif}#game{position:fixed;inset:0}canvas{display:block}.shade{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 45%,rgba(4,8,6,.45) 100%);z-index:1}.top{position:fixed;z-index:2;top:18px;left:22px;right:22px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}.logo,.stats,.quest,.bottom,.hint{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px)}.logo{padding:10px 13px;font-size:11px;font-weight:800;letter-spacing:.18em}.logo small{display:block;color:var(--muted);font:8px monospace;margin-top:4px;letter-spacing:.12em}.stats{padding:9px 12px;width:210px;font:9px monospace;letter-spacing:.09em}.statline{display:flex;align-items:center;gap:8px;margin:6px 0}.bar{height:5px;flex:1;background:#ffffff20}.bar i{display:block;height:100%;background:#c9d59c}.bar.hp i{background:#d38c70}.bar.food i{background:#d6b974}.stats footer{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:7px;margin-top:6px;color:var(--muted)}.quest{position:fixed;z-index:2;top:112px;left:22px;padding:12px 14px;width:230px;font-size:11px;pointer-events:none}.quest label{display:block;font:8px monospace;letter-spacing:.16em;color:var(--moss);margin-bottom:7px}.quest strong{font-weight:600}.quest small{display:block;color:var(--muted);margin-top:5px;font-size:10px}.cross{position:fixed;z-index:2;left:50%;top:50%;width:14px;height:14px;transform:translate(-50%,-50%);pointer-events:none}.cross:before,.cross:after{content:'';position:absolute;background:#fff;opacity:.85;box-shadow:0 0 4px #222}.cross:before{width:1px;height:14px;left:6px}.cross:after{height:1px;width:14px;top:6px}.bottom{position:fixed;z-index:2;bottom:17px;left:22px;right:22px;display:flex;justify-content:space-between;align-items:center;padding:9px 12px;font:8px monospace;letter-spacing:.09em;pointer-events:none}.bottom span{color:var(--muted)}.hint{position:fixed;z-index:3;left:50%;top:calc(50% + 24px);transform:translateX(-50%);padding:8px 11px;font:9px monospace;letter-spacing:.1em;opacity:0;transition:opacity .15s;pointer-events:none}.toast{position:fixed;z-index:6;left:50%;top:28%;transform:translateX(-50%);background:var(--glass);border:1px solid var(--line);padding:10px 15px;font:9px monospace;letter-spacing:.12em;opacity:0;transition:opacity .2s;pointer-events:none}.toast.on{opacity:1}.overlay{position:fixed;z-index:5;inset:0;background:linear-gradient(90deg,rgba(6,11,8,.84),rgba(7,12,9,.35)),linear-gradient(0deg,rgba(7,12,9,.5),transparent 40%);display:flex;align-items:center;padding:7vw;transition:opacity .25s}.overlay.hide{display:none}.card{width:min(510px,90vw);padding:26px;background:rgba(13,20,16,.83);border:1px solid var(--line);box-shadow:0 24px 80px #0006}.eyebrow{font:9px monospace;letter-spacing:.16em;color:var(--moss)}h1{font-size:clamp(50px,7vw,86px);line-height:.91;letter-spacing:-.07em;margin:19px 0 18px}h1 em{font-weight:400;color:var(--moss)}p{max-width:400px;color:#c5cabb;font-size:12px;line-height:1.75}button{font:10px monospace;letter-spacing:.12em;background:var(--moss);color:#152018;border:0;padding:13px 15px;margin-top:12px;cursor:pointer}button:hover{background:#e2ecc1}.menu-actions{display:flex;gap:10px;flex-wrap:wrap}.subtle{background:#26332a;color:var(--ink);border:1px solid var(--line)}.screen{position:fixed;z-index:7;inset:0;display:none;place-items:center;background:#080d0bd9;padding:18px}.screen.show{display:grid}.sheet{width:min(700px,94vw);max-height:85vh;overflow:auto;background:#111a15;border:1px solid var(--line);padding:22px}.sheet h2{margin:0 0 12px;font-size:22px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px}.slot{padding:12px;background:#1a261e;border:1px solid #ffffff18;font-size:12px}.slot small{display:block;color:var(--muted);margin-top:5px;line-height:1.5}.close{float:right;margin:0 0 12px}.row{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:9px 0;padding:10px;background:#1a261e;font-size:12px}.row button{margin:0}.controls{font:10px monospace;color:var(--muted);line-height:2}.notice{color:var(--moss);font:10px monospace;margin:12px 0}.mobile-help{display:none}@media(max-width:650px){.top{left:10px;right:10px;top:10px}.logo{font-size:9px}.stats{width:165px}.quest{top:102px;left:10px;width:190px}.bottom{left:10px;right:10px;bottom:10px}.bottom span:nth-child(2){display:none}.overlay{padding:5vw}.card{padding:20px}.mobile-help{display:block}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js"}}</script>
 </head>
-<body>
-  <div class="frame">
-    <canvas id="game"></canvas>
-    <div class="hud">
-      <div class="topbar">
-        <div class="panel">WILDLANDS // FIELD REPORT 01</div>
-        <div class="stats panel">
-          <div class="meter"><span>HP</span><div class="bar-shell"><div class="bar-fill health" id="hpBar" style="width: 100%"></div></div></div>
-          <div class="meter"><span>STAM</span><div class="bar-shell"><div class="bar-fill stamina" id="staminaBar" style="width: 100%"></div></div></div>
-        </div>
-      </div>
-      <div class="bottombar">
-        <div class="title">North Cascade // survival // day <span id="dayLabel">01</span></div>
-        <div class="panel">Controls: <strong>WASD</strong> // <strong>Shift</strong> // <strong>Space</strong> // <strong>Click</strong></div>
-      </div>
-      <div class="crosshair"><span></span></div>
-      <div class="toast" id="toast"></div>
-    </div>
-    <div class="overlay" id="intro">
-      <div class="card">
-        <div class="eyebrow">Field Journal // Uncharted Forest</div>
-        <h1>Wildlands <small>Survival</small></h1>
-        <div class="lead">Wake up in the tree line, keep moving, and survive the long night. The forest is alive, the fog is heavy, and the shadows have a habit of moving first.</div>
-        <button id="startBtn">Enter the Wilds</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
-    const toast = document.getElementById('toast');
-    const hpBar = document.getElementById('hpBar');
-    const staminaBar = document.getElementById('staminaBar');
-    const dayLabel = document.getElementById('dayLabel');
-    const intro = document.getElementById('intro');
-    const startBtn = document.getElementById('startBtn');
-
-    const map = [
-      "############################",
-      "#..............#...........#",
-      "#..###........#.....#.....##",
-      "#......##.....#.....#......#",
-      "#..#..........#....#.......#",
-      "#..#..######..#....#..#....#",
-      "#.............#....#..#....#",
-      "#..##......###....#..#....##",
-      "#............#....#........#",
-      "#..####.......#....#.......#",
-      "#......#.......#...#.......#",
-      "#......#.......#....#......#",
-      "#......#.......###..#......#",
-      "#......#....................#",
-      "#........................##",
-      "############################"
-    ];
-
-    const mapW = map[0].length;
-    const mapH = map.length;
-    const cell = 1;
-    const wallTextures = [];
-    const createWallTexture = (colorA, colorB, accent) => {
-      const t = document.createElement('canvas');
-      t.width = t.height = 64;
-      const g = t.getContext('2d');
-      for (let y = 0; y < 64; y++) {
-        for (let x = 0; x < 64; x++) {
-          const v = Math.random();
-          if (v > 0.83) g.fillStyle = accent;
-          else if (v > 0.68) g.fillStyle = colorB;
-          else g.fillStyle = colorA;
-          g.fillRect(x, y, 1, 1);
-        }
-      }
-      for (let i = 0; i < 500; i++) {
-        const x = Math.random() * 64;
-        const y = Math.random() * 64;
-        g.fillStyle = 'rgba(0,0,0,0.18)';
-        g.fillRect(x, y, 2 + Math.random() * 4, 2 + Math.random() * 4);
-      }
-      return t;
-    };
-
-    wallTextures.push(createWallTexture('#4b5a45', '#69775d', '#7f8d73'));
-    wallTextures.push(createWallTexture('#6d5847', '#8c775f', '#a98a67'));
-    wallTextures.push(createWallTexture('#686d75', '#8a8d8d', '#9ea3a1'));
-    wallTextures.push(createWallTexture('#4f5d4d', '#697c63', '#839a7b'));
-
-    const player = {
-      x: 3.5,
-      y: 3.5,
-      a: 0.5,
-      health: 100,
-      stamina: 100,
-      sprinting: false,
-      attackCooldown: 0,
-      meleeRange: 2.4,
-      attackFlash: 0,
-      win: false,
-      time: 0.2,
-      day: 1
-    };
-
-    const enemies = [
-      { x: 8.5, y: 3.5, hp: 3, alive: true, phase: 0 },
-      { x: 12.2, y: 6.2, hp: 3, alive: true, phase: 1.6 },
-      { x: 4.8, y: 10.8, hp: 3, alive: true, phase: 2.1 },
-      { x: 10.4, y: 12.1, hp: 3, alive: true, phase: 0.8 }
-    ];
-
-    const keys = {};
-    let started = false;
-    let pointerLocked = false;
-    let lastFrame = performance.now();
-    let timeThen = performance.now();
-    const audio = {};
-
-    function showToast(message) {
-      toast.textContent = message;
-      toast.classList.add('show');
-      clearTimeout(showToast._t);
-      showToast._t = setTimeout(() => toast.classList.remove('show'), 1600);
-    }
-
-    function createTone(freq, duration, type = 'sine', gain = 0.04) {
-      const AudioCtor = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtor) return;
-      if (!audio.ctx) audio.ctx = new AudioCtor();
-      const ctxAudio = audio.ctx;
-      if (ctxAudio.state === 'suspended') ctxAudio.resume();
-      const osc = ctxAudio.createOscillator();
-      const g = ctxAudio.createGain();
-      osc.type = type;
-      osc.frequency.value = freq;
-      g.gain.value = gain;
-      osc.connect(g);
-      g.connect(ctxAudio.destination);
-      osc.start();
-      osc.stop(ctxAudio.currentTime + duration);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctxAudio.currentTime + duration);
-    }
-
-    function soundAttack() {
-      createTone(110, 0.12, 'sawtooth', 0.055);
-      createTone(70, 0.22, 'triangle', 0.028);
-    }
-
-    function soundHit() {
-      createTone(65, 0.16, 'square', 0.04);
-    }
-
-    function soundDamage() {
-      createTone(38, 0.2, 'sawtooth', 0.05);
-    }
-
-    function wallAt(x, y) {
-      const ix = Math.floor(x);
-      const iy = Math.floor(y);
-      if (ix < 0 || iy < 0 || ix >= mapW || iy >= mapH) return '#';
-      return map[iy][ix];
-    }
-
-    function castRay(rayAngle) {
-      const sinA = Math.sin(rayAngle), cosA = Math.cos(rayAngle);
-      const dist = 0;
-      let step = 0.02;
-      let x = player.x, y = player.y;
-      let hit = false; let wallType = 0; let hitX = 0; let hitY = 0;
-      for (let d = 0; d < 22; d += step) {
-        x = player.x + cosA * d;
-        y = player.y + sinA * d;
-        const c = wallAt(x, y);
-        if (c === '#') {
-          hit = true;
-          hitX = x;
-          hitY = y;
-          wallType = (Math.floor(x) + Math.floor(y)) % wallTextures.length;
-          break;
-        }
-      }
-      if (!hit) return null;
-      const distance = Math.hypot(hitX - player.x, hitY - player.y);
-      const wallX = hitX - Math.floor(hitX);
-      return { distance, wallType, wallX };
-    }
-
-    function renderSky(now) {
-      const w = canvas.width; const h = canvas.height;
-      const phase = (Math.sin((player.time * 0.12) + 1.1) + 1) * 0.5;
-      const skyTop = `hsl(${200 + phase * 18}, ${40 + phase * 18}%, ${22 + phase * 18}%)`;
-      const skyMid = `hsl(${190 + phase * 14}, ${30 + phase * 10}%, ${52 + phase * 25}%)`;
-      const skyBottom = `hsl(${55 + phase * 10}, ${40 + phase * 12}%, ${58 + phase * 12}%)`;
-      const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, skyTop);
-      g.addColorStop(0.38, skyMid);
-      g.addColorStop(1, skyBottom);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-
-      const sunX = w * (0.18 + 0.64 * phase);
-      const sunY = h * (0.14 + (1 - phase) * 0.34);
-      ctx.beginPath();
-      ctx.fillStyle = `rgba(255, 214, 135, ${0.16 + phase * 0.8})`;
-      ctx.arc(sunX, sunY, 58, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.fillStyle = `rgba(255, 233, 175, ${0.32 + phase * 0.7})`;
-      ctx.arc(sunX, sunY, 28, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    function renderGroundAndFog() {
-      const w = canvas.width; const h = canvas.height;
-      const floor = ctx.createLinearGradient(0, h * 0.5, 0, h);
-      floor.addColorStop(0, 'rgba(34, 39, 36, 0.25)');
-      floor.addColorStop(1, 'rgba(14,17,16,0.72)');
-      ctx.fillStyle = floor;
-      ctx.fillRect(0, h * 0.5, w, h * 0.5);
-
-      for (let i = 0; i < 70; i++) {
-        const alpha = 0.02 + (i / 70) * 0.08;
-        ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
-        ctx.beginPath();
-        ctx.moveTo(Math.random() * w, h * 0.52 + Math.random() * h * 0.46);
-        ctx.lineTo(Math.random() * w, h * 0.52 + Math.random() * h * 0.46);
-        ctx.stroke();
-      }
-    }
-
-    function renderWalls() {
-      const w = canvas.width; const h = canvas.height;
-      const fov = Math.PI / 3;
-      const rays = 210;
-      for (let i = 0; i < rays; i++) {
-        const rayA = player.a - fov / 2 + (i / rays) * fov;
-        const hit = castRay(rayA);
-        if (!hit) continue;
-        const dist = hit.distance * Math.cos(rayA - player.a);
-        const wallHeight = Math.min(h * 0.95, (h * 0.9) / Math.max(0.15, dist));
-        const x = (i / rays) * w;
-        const slice = w / rays;
-
-        const tex = wallTextures[hit.wallType % wallTextures.length];
-        const tx = Math.floor((hit.wallX % 1) * 64) % 64;
-        const grd = ctx.createLinearGradient(0, h / 2 - wallHeight / 2, 0, h / 2 + wallHeight / 2);
-        const base = (1 / Math.max(0.2, dist / 10)) * 0.7;
-        const shade = Math.max(0.15, 1 - dist / 18);
-        const c = Math.floor(255 * shade);
-        grd.addColorStop(0, `rgba(${c}, ${c}, ${c}, ${0.92})`);
-        grd.addColorStop(1, `rgba(${Math.max(0, c - 55)}, ${Math.max(0, c - 55)}, ${Math.max(0, c - 55)}, ${0.9})`);
-        ctx.fillStyle = grd;
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(x, h / 2 - wallHeight / 2, slice + 1, wallHeight);
-        ctx.clip();
-        ctx.drawImage(tex, tx, 0, 1, tex.height, x, h / 2 - wallHeight / 2, slice + 1, wallHeight);
-        ctx.restore();
-      }
-    }
-
-    function drawSprite(sprite, scale) {
-      const dx = sprite.x - player.x;
-      const dy = sprite.y - player.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist < 0.2) return;
-      const angleTo = Math.atan2(dy, dx);
-      let a = angleTo - player.a;
-      while (a < -Math.PI) a += Math.PI * 2;
-      while (a > Math.PI) a -= Math.PI * 2;
-      if (Math.abs(a) > Math.PI / 2 + 0.5) return;
-      const screenX = ((a + Math.PI / 2) / (Math.PI / 1.4)) * canvas.width;
-      const size = Math.max(18, canvas.height / (dist * 2.2));
-
-      const px = canvas.width * 0.5 + (screenX - canvas.width * 0.5) * (1.1);
-      const py = canvas.height * 0.5 + 10;
-
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.scale(1, 1);
-      ctx.fillStyle = '#0c100f';
-      ctx.globalAlpha = Math.max(0.1, 1 - dist / 16);
-      ctx.fillRect(-size * 0.28, -size * 0.5, size * 0.56, size);
-      ctx.fillStyle = '#707a68';
-      ctx.fillRect(-size * 0.22, -size * 0.42, size * 0.44, size * 0.72);
-      ctx.fillStyle = '#c7bca4';
-      ctx.beginPath();
-      ctx.arc(0, -size * 0.2, size * 0.22, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function drawEnemies() {
-      for (const e of enemies) {
-        if (!e.alive) continue;
-        drawSprite({ x: e.x, y: e.y }, 1);
-      }
-    }
-
-    function updatePlayer(dt) {
-      const moveSpeed = 2.4; const sprintBonus = 1.6;
-      let dx = 0, dy = 0;
-      const forwardX = Math.cos(player.a); const forwardY = Math.sin(player.a);
-      const strafeX = Math.cos(player.a + Math.PI / 2); const strafeY = Math.sin(player.a + Math.PI / 2);
-      if (keys['KeyW']) { dx += forwardX; dy += forwardY; }
-      if (keys['KeyS']) { dx -= forwardX; dy -= forwardY; }
-      if (keys['KeyA']) { dx += strafeX; dy += strafeY; }
-      if (keys['KeyD']) { dx -= strafeX; dy -= strafeY; }
-      const len = Math.hypot(dx, dy);
-      const sprinting = (keys['ShiftLeft'] || keys['ShiftRight']) && player.stamina > 5 && len > 0;
-      const speed = (sprinting ? moveSpeed * 1.8 : moveSpeed) * dt * 60;
-      if (len > 0) {
-        dx /= len; dy /= len;
-        const nx = player.x + dx * speed;
-        const ny = player.y + dy * speed;
-        if (wallAt(nx, player.y) !== '#') player.x = nx;
-        if (wallAt(player.x, ny) !== '#') player.y = ny;
-      }
-      if (sprinting) player.stamina = Math.max(0, player.stamina - 25 * dt);
-      else player.stamina = Math.min(100, player.stamina + 12 * dt);
-      player.attackCooldown = Math.max(0, player.attackCooldown - dt);
-      player.attackFlash = Math.max(0, player.attackFlash - dt * 2);
-      player.time += dt;
-      player.day = 1 + Math.floor(player.time / 30);
-      dayLabel.textContent = String(player.day).padStart(2, '0');
-      hpBar.style.width = player.health + '%';
-      staminaBar.style.width = player.stamina + '%';
-    }
-
-    function findNearestEnemy() {
-      let best = null;
-      for (const e of enemies) {
-        if (!e.alive) continue;
-        const d = Math.hypot(e.x - player.x, e.y - player.y);
-        if (d < 2.2 && (!best || d < best.d)) best = { e, d };
-      }
-      return best;
-    }
-
-    function attack() {
-      if (!started || player.attackCooldown > 0) return;
-      player.attackCooldown = 0.42;
-      player.attackFlash = 1;
-      soundAttack();
-      const best = findNearestEnemy();
-      if (best) {
-        best.e.hp -= 1;
-        if (best.e.hp <= 0) {
-          best.e.alive = false;
-          showToast('Threat neutralized');
-          soundHit();
-        } else {
-          showToast('Hit');
-          soundHit();
-        }
-      } else {
-        showToast('Miss');
-      }
-    }
-
-    function updateEnemies(dt) {
-      for (const e of enemies) {
-        if (!e.alive) continue;
-        const dx = player.x - e.x;
-        const dy = player.y - e.y;
-        const d = Math.hypot(dx, dy);
-        if (d < 7) {
-          const speed = 0.7 * dt * 60;
-          const nx = e.x + (dx / d) * speed * 0.4;
-          const ny = e.y + (dy / d) * speed * 0.4;
-          if (wallAt(nx, e.y) !== '#') e.x = nx;
-          if (wallAt(e.x, ny) !== '#') e.y = ny;
-          if (d < 1.2) {
-            player.health = Math.max(0, player.health - 10 * dt);
-            if (player.health <= 0) {
-              intro.classList.remove('hidden');
-              intro.querySelector('.card').innerHTML = '<div class="eyebrow">Field Journal // Entry Ended</div><h1>Lost to<br><small>the wild</small></h1><div class="lead">The forest gave you no second chance. Press below to try again.</div><button id="restartBtn">Try Again</button>';
-              document.getElementById('restartBtn').addEventListener('click', () => location.reload());
-              soundDamage();
-            }
-          }
-        }
-      }
-    }
-
-    function loop(ts) {
-      const dt = Math.min((ts - lastFrame) / 1000, 0.05);
-      lastFrame = ts;
-      if (started) {
-        updatePlayer(dt);
-        updateEnemies(dt);
-      }
-
-      renderSky(ts);
-      renderWalls();
-      drawEnemies();
-      renderGroundAndFog();
-      ctx.fillStyle = 'rgba(0,0,0,0.2)';
-      ctx.fillRect(0, canvas.height * 0.66, canvas.width, canvas.height * 0.34);
-      if (started) {
-        if (player.health <= 0) {
-          // death screen handled in overlay
-        }
-      }
-      requestAnimationFrame(loop);
-    }
-
-    function resize() {
-      const ratio = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = Math.round(rect.width * ratio);
-      canvas.height = Math.round(rect.height * ratio);
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.imageSmoothingEnabled = true;
-    }
-
-    function startGame() {
-      started = true;
-      intro.classList.add('hidden');
-      showToast('Survive the night');
-      createTone(180, 0.2, 'triangle', 0.04);
-    }
-
-    startBtn.addEventListener('click', startGame);
-    canvas.addEventListener('click', () => {
-      if (started) attack();
-      else startGame();
-    });
-
-    document.addEventListener('keydown', (e) => {
-      keys[e.code] = true;
-      if (e.code === 'Space') {
-        e.preventDefault();
-      }
-      if (e.code === 'KeyE') {
-        attack();
-      }
-    });
-
-    document.addEventListener('keyup', (e) => {
-      keys[e.code] = false;
-    });
-
-    document.addEventListener('mousemove', (e) => {
-      if (!started || !pointerLocked) return;
-      player.a += e.movementX * 0.0024;
-    });
-
-    canvas.addEventListener('pointerdown', () => {
-      if (document.pointerLockElement !== canvas) {
-        canvas.requestPointerLock();
-      }
-      if (started) attack();
-    });
-
-    document.addEventListener('pointerlockchange', () => {
-      pointerLocked = document.pointerLockElement === canvas;
-    });
-
-    window.addEventListener('resize', resize);
-    resize();
-    requestAnimationFrame(loop);
-  </script>
-</body>
-</html>
+<body><div id="game"></div><div class="shade"></div>
+<div class="top"><div class="logo">WILDLANDS <small>LAST FLIGHT · CASCADE WILDERNESS</small></div><div class="stats"><div class="statline">HEALTH <div class="bar hp"><i id="hp"></i></div><b id="hpv">100</b></div><div class="statline">STAMINA <div class="bar"><i id="stam"></i></div><b id="stamv">100</b></div><div class="statline">HUNGER <div class="bar food"><i id="food"></i></div><b id="foodv">100</b></div><footer><span>DAY <b id="day">01</b></span><span id="clock">08:00</span><span id="ammo">BOLTS 0</span></footer></div></div>
+<div class="quest"><label>FIELD OBJECTIVE</label><strong id="quest-title">Find the crash site</strong><small id="quest-detail">Follow the smoke plume to the east.</small></div><div class="cross"></div><div class="hint" id="hint"></div><div class="toast" id="toast"></div><div class="bottom"><span>WASD MOVE · SHIFT SPRINT · SPACE JUMP · E INTERACT</span><span>1 KNIFE · 2 BOW · R RELOAD · I INVENTORY · C CRAFT · B BUILD · ESC MENU</span><span id="coords">CASCADE FOREST</span></div>
+<div class="overlay" id="start"><div class="card"><div class="eyebrow">SURVIVAL JOURNAL · 01 / CASCADE WILDERNESS</div><h1>LAST<br><em>FLIGHT.</em></h1><p>Your charter plane came down in the mountains. You crawled out of the wreckage with a field knife, one flare, and no radio. Find the emergency beacon, gather supplies, build shelter, and endure the wilderness.</p><div class="menu-actions"><button id="new-game">START NEW GAME</button><button class="subtle" id="continue">CONTINUE</button></div><p class="controls">WASD move · mouse look · left click attack / shoot · E collect · I inventory · C craft · B build · Esc pause</p><p class="mobile-help">For best play use a desktop browser and keyboard/mouse. Three.js is loaded from a CDN, so the first launch needs internet access.</p></div></div>
+<div class="screen" id="pause"><div class="sheet"><button class="close subtle" data-close="pause">RESUME</button><div class="eyebrow">FIELD MENU</div><h2>Paused</h2><p class="controls">WASD move · Shift sprint · Space jump · E collect/use · 1 knife · 2 bow · R reload · I inventory · C craft · B build · Esc pause</p><div class="menu-actions"><button id="save-game">SAVE GAME</button><button class="subtle" id="download-save">EXPORT SAVE</button><button class="subtle" id="to-title">RETURN TO TITLE</button></div><p class="notice" id="save-status"></p></div></div>
+<div class="screen" id="inventory"><div class="sheet"><button class="close subtle" data-close="inventory">CLOSE</button><div class="eyebrow">FIELD PACK</div><h2>Inventory</h2><div class="grid" id="inventory-list"></div></div></div>
+<div class="screen" id="crafting"><div class="sheet"><button class="close subtle" data-close="crafting">CLOSE</button><div class="eyebrow">FIELDCRAFT</div><h2>Craft & build</h2><div id="craft-list"></div><p class="controls">Materials can be found as glowing supply bundles in clearings and around the wreck.</p></div></div>
+<div class="screen" id="death"><div class="sheet"><div class="eyebrow">FIELD JOURNAL · ENTRY ENDED</div><h2>Lost to the wild.</h2><p id="death-message">The forest keeps what it takes.</p><button id="death-restart">NEW EXPEDITION</button></div></div>
+<script type="module">
+import * as THREE from 'three';
+const mount=document.querySelector('#game'), scene=new THREE.Scene();
+scene.background=new THREE.Color(0x9eb5b1);scene.fog=new THREE.FogExp2(0x9eb5b1,.006);
+const camera=new THREE.PerspectiveCamera(76,innerWidth/innerHeight,.1,600);
+const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;mount.appendChild(renderer.domElement);
+const clamp=THREE.MathUtils.clamp, rnd=(()=>{let s=29471;return()=>((s=(s*48271)%2147483647)-1)/2147483646})();
+function tex(base,kind){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,256,256);for(let i=0;i<1200;i++){const a=rnd(),b=rnd(),r=1+rnd()*8;x.fillStyle=kind==='bark'?`rgba(30,23,16,${rnd()*.32})`:`rgba(${kind==='ground'?'35,43,29':'235,231,211'},${rnd()*.18})`;if(kind==='bark'){x.fillRect(a*256,b*256,1+rnd()*2,5+rnd()*20)}else{x.beginPath();x.ellipse(a*256,b*256,r,rnd()*r,0,0,7);x.fill()}}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t}
+function heightAt(x,z){return Math.sin(x*.019)*2+Math.cos(z*.022)*2.3+Math.sin((x+z)*.014)*2+Math.cos(x*.054-z*.045)*.55}
+// broad, seeded, gently rolling terrain
+const gs=420, seg=120, gp=[], gu=[], gi=[];for(let z=0;z<=seg;z++)for(let x=0;x<=seg;x++){const wx=(x/seg-.5)*gs,wz=(z/seg-.5)*gs;gp.push(wx,heightAt(wx,wz),wz);gu.push(x/seg*28,z/seg*28);if(x<seg&&z<seg){const a=z*(seg+1)+x,b=a+1,d=a+seg+1;gi.push(a,d,b,b,d,d+1)}}const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.Float32BufferAttribute(gp,3));gg.setAttribute('uv',new THREE.Float32BufferAttribute(gu,2));gg.setIndex(gi);gg.computeVertexNormals();const land=new THREE.Mesh(gg,new THREE.MeshStandardMaterial({map:tex('#59604a','ground'),roughness:1}));land.receiveShadow=true;scene.add(land);
+// sky, atmosphere and dynamic sun
+const sky=new THREE.Mesh(new THREE.SphereGeometry(500,24,16),new THREE.MeshBasicMaterial({color:0x9dbab8,side:THREE.BackSide}));scene.add(sky);const hemi=new THREE.HemisphereLight(0xc9dcda,0x414937,1.05);scene.add(hemi);const sun=new THREE.DirectionalLight(0xffe6c1,2.1);sun.position.set(-80,120,40);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-90;sun.shadow.camera.right=90;sun.shadow.camera.top=90;sun.shadow.camera.bottom=-90;scene.add(sun);
+// water basin
+const lake=new THREE.Mesh(new THREE.PlaneGeometry(90,75),new THREE.MeshStandardMaterial({color:0x426b70,roughness:.22,metalness:.15,transparent:true,opacity:.88}));lake.rotation.x=-Math.PI/2;lake.position.set(82,-1.7,-45);scene.add(lake);
+// Instanced trees and scattered rocks for performance
+const bark=new THREE.MeshStandardMaterial({map:tex('#514638','bark'),color:0xa29379,roughness:.96}),leaf=new THREE.MeshStandardMaterial({map:tex('#435841','leaf'),color:0x9eae89,roughness:1}),stone=new THREE.MeshStandardMaterial({map:tex('#6c7068','ground'),color:0xb0afa1,roughness:1});
+const count=740,trunk=new THREE.InstancedMesh(new THREE.CylinderGeometry(.25,.42,1,7),bark,count),crown=new THREE.InstancedMesh(new THREE.ConeGeometry(1,1.7,7),leaf,count*2),dummy=new THREE.Object3D();trunk.castShadow=true;crown.castShadow=true;let ci=0;
+for(let i=0;i<count;i++){let x,z;do{x=(rnd()-.5)*385;z=(rnd()-.5)*385}while(Math.hypot(x,z)<13||((x>18&&x<52)&&(z>-15&&z<23)));const y=heightAt(x,z),h=6+rnd()*9,r=.7+rnd()*.8;dummy.position.set(x,y+h*.34,z);dummy.scale.set(r,h*.68,r);dummy.rotation.y=rnd()*6;dummy.updateMatrix();trunk.setMatrixAt(i,dummy.matrix);for(let l=0;l<2;l++){dummy.position.set(x,y+h*.5+l*h*.22,z);dummy.scale.set(h*(.2+rnd()*.05),h*(.58+rnd()*.1),h*(.2+rnd()*.05));dummy.rotation.y=rnd()*6;dummy.updateMatrix();crown.setMatrixAt(ci++,dummy.matrix)}}scene.add(trunk,crown);
+const rocks=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),stone,440);rocks.castShadow=true;for(let i=0;i<440;i++){const a=rnd()*6.28,r=10+rnd()*185,x=Math.cos(a)*r,z=Math.sin(a)*r;dummy.position.set(x,heightAt(x,z)+.2,z);dummy.scale.set(.2+rnd()*1.1,.2+rnd()*.7,.2+rnd()*.8);dummy.rotation.set(rnd(),rnd()*6,rnd());dummy.updateMatrix();rocks.setMatrixAt(i,dummy.matrix)}scene.add(rocks);
+// lightweight waving grass patch instances
+const blade=new THREE.BufferGeometry();blade.setAttribute('position',new THREE.Float32BufferAttribute([-.035,0,0,.035,0,0,0,.55,0],3));blade.setIndex([0,2,1]);blade.computeVertexNormals();const grassMat=new THREE.MeshStandardMaterial({color:0x84976a,side:THREE.DoubleSide,roughness:1});grassMat.onBeforeCompile=s=>{s.uniforms.windTime={value:0};s.vertexShader='uniform float windTime;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x += sin(windTime + instanceMatrix[3][0]*.15 + instanceMatrix[3][2]*.08) * position.y * .18;');grassMat.userData.shader=s};const grass=new THREE.InstancedMesh(blade,grassMat,6500);grass.frustumCulled=false;for(let i=0;i<6500;i++){const a=rnd()*6.28,r=8+Math.sqrt(rnd())*185,x=Math.cos(a)*r,z=Math.sin(a)*r;dummy.position.set(x,heightAt(x,z),z);dummy.scale.setScalar(.6+rnd());dummy.rotation.y=rnd()*6;dummy.updateMatrix();grass.setMatrixAt(i,dummy.matrix)}scene.add(grass);
+// crash-site wreck: broken fuselage, wings, tail and rising smoke
+const wreck=new THREE.Group();wreck.position.set(34,heightAt(34,5),5);wreck.rotation.y=-.42;wreck.rotation.z=-.13;const metal=new THREE.MeshStandardMaterial({color:0xb8b8a5,metalness:.55,roughness:.42}),darkMetal=new THREE.MeshStandardMaterial({color:0x38413c,metalness:.25,roughness:.7}),orange=new THREE.MeshStandardMaterial({color:0xb77042,roughness:.8});function part(g,m,p,r=[0,0,0]){const o=new THREE.Mesh(g,m);o.position.set(...p);o.rotation.set(...r);o.castShadow=true;o.receiveShadow=true;wreck.add(o);return o}part(new THREE.CylinderGeometry(.8,1.3,12,10,1,true),metal,[0,1.5,0],[0,0,Math.PI/2]);part(new THREE.ConeGeometry(.8,2,10),metal,[7,1.5,0],[0,0,-Math.PI/2]);part(new THREE.BoxGeometry(2,7,.22),darkMetal,[-1,1.4,0],[.1,0,.25]);part(new THREE.BoxGeometry(5,.18,1),orange,[-4,1.2,0],[0,.2,.1]);part(new THREE.BoxGeometry(.2,2,.8),orange,[5,3,0],[0,0,.2]);for(let i=0;i<5;i++)part(new THREE.BoxGeometry(.3,.15,1.2),darkMetal,[-3+i*1.1,1.2,1.2],[0,rnd(),.5]);scene.add(wreck);
+const smoke=[];const smokeMat=new THREE.MeshBasicMaterial({color:0x45473c,transparent:true,opacity:.2,depthWrite:false});for(let i=0;i<24;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.55+rnd()*.7,6,6),smokeMat.clone());m.position.set(34+rnd()*1.4,4+rnd()*8,5+rnd());scene.add(m);smoke.push(m)}
+// Player camera and first-person bow/knife visible in camera space
+const cameraRig=new THREE.Group();camera.add(cameraRig);const handMat=new THREE.MeshStandardMaterial({color:0x9e876d,roughness:.9}),weaponMat=new THREE.MeshStandardMaterial({color:0x584b3d,roughness:.8});const arm=new THREE.Mesh(new THREE.CapsuleGeometry(.085,.44,3,6),handMat);arm.position.set(.32,-.34,-.53);arm.rotation.z=-.38;cameraRig.add(arm);const bow=new THREE.Mesh(new THREE.TorusGeometry(.24,.025,6,20,Math.PI),weaponMat);bow.position.set(.3,-.25,-.6);bow.rotation.set(0,0,-Math.PI/2);cameraRig.add(bow);const knifeMesh=new THREE.Mesh(new THREE.ConeGeometry(.045,.5,5),new THREE.MeshStandardMaterial({color:0xc2c9bd,metalness:.72,roughness:.3}));knifeMesh.position.set(.28,-.35,-.65);knifeMesh.rotation.z=-.75;cameraRig.add(knifeMesh);scene.add(camera);
+const player={pos:new THREE.Vector3(0,heightAt(0,0)+1.7,0),yaw:0,pitch:0,vy:0,hp:100,stamina:100,hunger:100,alive:true};camera.position.copy(player.pos);
+const items={wood:0,stone:0,fiber:0,berries:0,meat:0,arrows:0,bandage:0};const labels={wood:'Wood',stone:'Stone',fiber:'Plant fiber',berries:'Berries',meat:'Raw meat',arrows:'Arrows',bandage:'Bandages'};
+const pickups=[];const pickupColors={wood:0xa77546,stone:0xaaa99a,fiber:0x95ac66,berries:0xc8585a,arrows:0xd9c38b,bandage:0xe9e5d6};function addPickup(type,n,x,z){const g=new THREE.Group();const mat=new THREE.MeshStandardMaterial({color:pickupColors[type],emissive:pickupColors[type],emissiveIntensity:.24,roughness:.55});const m=new THREE.Mesh(new THREE.IcosahedronGeometry(type==='wood'?.26:.22,0),mat);m.position.y=.35;g.add(m);const ring=new THREE.Mesh(new THREE.TorusGeometry(.34,.018,4,16),new THREE.MeshBasicMaterial({color:pickupColors[type],transparent:true,opacity:.65}));ring.rotation.x=Math.PI/2;g.add(ring);g.position.set(x,heightAt(x,z),z);scene.add(g);pickups.push({type,n,group:g})}
+for(let i=0;i<70;i++){let x,z;do{x=(rnd()-.5)*170;z=(rnd()-.5)*170}while(Math.hypot(x,z)<8);const type=['wood','wood','stone','fiber','berries','arrows','bandage'][Math.floor(rnd()*7)];addPickup(type,type==='wood'?2+Math.floor(rnd()*3):1,x,z)}
+// Deer and wolves: primitive procedural models with state-driven wander, flee, alert and attack behavior
+const animals=[];function makeAnimal(kind,x,z){const g=new THREE.Group();const fur=new THREE.MeshStandardMaterial({color:kind==='deer'?0x947557:0x55584c,roughness:.95}),dark=new THREE.MeshStandardMaterial({color:0x292d28,roughness:1});const body=new THREE.Mesh(new THREE.CapsuleGeometry(kind==='deer'?.38:.44,kind==='deer'?.95:.85,3,7),fur);body.rotation.z=Math.PI/2;body.position.y=kind==='deer'?1.1:.8;body.castShadow=true;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(kind==='deer'?.25:.28,8,7),fur);head.position.set(.55,kind==='deer'?1.55:1.1,0);g.add(head);for(let i=0;i<4;i++){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.055,.075,kind==='deer'?.72:.48,5),dark);leg.position.set((i<2?.3:-.3),kind==='deer'?.48:.35,(i%2?.2:-.2));g.add(leg)}if(kind==='deer'){for(const side of [-1,1]){const ant=new THREE.Mesh(new THREE.CylinderGeometry(.025,.045,.58,5),dark);ant.position.set(.55,1.9,side*.13);ant.rotation.z=-.25;g.add(ant)}}g.position.set(x,heightAt(x,z),z);scene.add(g);animals.push({kind,g,state:'wander',timer:rnd()*4,hp:kind==='wolf'?2:1,attack:0,dir:rnd()*6.28,speed:kind==='wolf'?2.1:1.45})}
+for(let i=0;i<9;i++){const a=rnd()*6.28,r=30+rnd()*120;makeAnimal(i<4?'wolf':'deer',Math.cos(a)*r,Math.sin(a)*r)}
+// quest progression and crafted objects
+let quest=0,weapon='knife',paused=true,started=false,dayTime=8*60,toastTimer=0,shotCooldown=0,saveName='wildlands-last-flight';const quests=[['Find the crash site','Follow the smoke plume to the east.'],['Recover the emergency beacon','Search the wreckage for the signal kit.'],['Make a campfire','Collect wood and fiber, then craft a fire.'],['Survive until morning','The forest is dangerous after dark.'],['Signal for rescue','Return to the wreck and activate the beacon.']];
+function questSet(n){quest=clamp(n,0,quests.length-1);document.querySelector('#quest-title').textContent=quests[quest][0];document.querySelector('#quest-detail').textContent=quests[quest][1];save()}
+const built=[];function makeBuild(type){if(type==='campfire'){const g=new THREE.Group();const base=new THREE.Mesh(new THREE.CylinderGeometry(.55,.65,.16,8),new THREE.MeshStandardMaterial({color:0x574636}));base.position.y=.08;g.add(base);for(let i=0;i<4;i++){const log=new THREE.Mesh(new THREE.CylinderGeometry(.08,.09,.9,6),weaponMat);log.position.set(0,.18,0);log.rotation.y=i*Math.PI/4;log.rotation.z=Math.PI/2;g.add(log)}const fire=new THREE.PointLight(0xff8a36,3,11);fire.position.y=.8;g.add(fire);const flame=new THREE.Mesh(new THREE.ConeGeometry(.22,.75,6),new THREE.MeshBasicMaterial({color:0xff9a34}));flame.position.y=.6;g.add(flame);g.userData.flame=flame;return g}const g=new THREE.Group();const mat=new THREE.MeshStandardMaterial({color:0x78583a,roughness:1});for(let i=0;i<5;i++){const plank=new THREE.Mesh(new THREE.BoxGeometry(2.4,.22,.15),mat);plank.position.set(0,.35+i*.23,0);g.add(plank)}return g}
+function save(){try{localStorage.setItem(saveName,JSON.stringify({pos:player.pos.toArray(),yaw:player.yaw,hp:player.hp,stamina:player.stamina,hunger:player.hunger,items,quest,dayTime,animals:animals.map(a=>({x:a.g.position.x,z:a.g.position.z,hp:a.hp,alive:a.g.visible}))}));return true}catch{return false}}
+function load(){try{const d=JSON.parse(localStorage.getItem(saveName));if(!d)return false;player.pos.fromArray(d.pos);player.yaw=d.yaw||0;player.hp=d.hp??100;player.stamina=d.stamina??100;player.hunger=d.hunger??100;Object.assign(items,d.items||{});dayTime=d.dayTime||480;questSet(Math.min(d.quest||0,quests.length-1));if(d.animals)d.animals.forEach((v,i)=>{if(animals[i]){animals[i].g.position.set(v.x,heightAt(v.x,v.z),v.z);animals[i].hp=v.hp;animals[i].g.visible=v.alive}});return true}catch{return false}}
+function toast(msg){const e=document.querySelector('#toast');e.textContent=msg;e.classList.add('on');toastTimer=2.2}
+let audio;function tone(f=180,d=.12,type='sine',vol=.03){try{audio ||= new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+d);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+d)}catch{}}
+function noise(d=.3,vol=.04){try{audio ||= new(window.AudioContext||window.webkitAudioContext)();const n=audio.createBufferSource(),b=audio.createBuffer(1,audio.sampleRate*d,audio.sampleRate),data=b.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(rnd()*2-1)*Math.pow(1-i/data.length,2);const g=audio.createGain();g.gain.value=vol;n.buffer=b;n.connect(g);g.connect(audio.destination);n.start()}catch{}}
+function setScreen(id,on){document.getElementById(id).classList.toggle('show',on)}function lock(){renderer.domElement.requestPointerLock?.()}
+function startNew(){localStorage.removeItem(saveName);location.reload()}
+document.querySelector('#new-game').onclick=()=>{localStorage.removeItem(saveName);started=true;paused=false;document.querySelector('#start').classList.add('hide');lock();tone(170,.3,'triangle');toast('Find the crash site')};document.querySelector('#continue').onclick=()=>{if(!load()){toast('No expedition save found');return}started=true;paused=false;document.querySelector('#start').classList.add('hide');lock();toast('Expedition restored')};document.querySelector('#save-game').onclick=()=>{const ok=save();document.querySelector('#save-status').textContent=ok?'EXPEDITION SAVED LOCALLY':'Unable to save in this browser'};document.querySelector('#download-save').onclick=()=>{save();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([localStorage.getItem(saveName)||'{}'],{type:'application/json'}));a.download='wildlands-save.json';a.click();URL.revokeObjectURL(a.href)};document.querySelector('#to-title').onclick=()=>{save();document.exitPointerLock?.();setScreen('pause',false);started=false;document.querySelector('#start').classList.remove('hide')};document.querySelector('#death-restart').onclick=startNew;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{setScreen(b.dataset.close,false);paused=false;lock()});
+document.addEventListener('pointerlockchange',()=>{if(started&&document.pointerLockElement!==renderer.domElement&&!['inventory','crafting','pause','death'].some(id=>document.getElementById(id).classList.contains('show'))){paused=true;setScreen('pause',true)}});
+function toggleMenu(name){const el=document.getElementById(name),open=!el.classList.contains('show');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));if(open){paused=true;setScreen(name,true);document.exitPointerLock?.();if(name==='inventory')renderInventory();if(name==='crafting')renderCraft()}else{paused=false;lock()}}
+const keys={};document.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();if(!started)return;if(e.code==='Escape'){if(document.querySelector('.screen.show')){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));paused=false;lock()}else toggleMenu('pause')}if(e.code==='KeyI')toggleMenu('inventory');if(e.code==='KeyC')toggleMenu('crafting');if(e.code==='KeyB')toggleMenu('crafting');if(e.code==='Digit1'){weapon='knife';arm.visible=knifeMesh.visible=true;bow.visible=false;toast('Field knife equipped')}if(e.code==='Digit2'){weapon='bow';arm.visible=bow.visible=true;knifeMesh.visible=false;toast('Hunting bow equipped')}if(e.code==='KeyE')interact()});document.addEventListener('keyup',e=>keys[e.code]=false);let locked=false;document.addEventListener('pointerlockchange',()=>locked=document.pointerLockElement===renderer.domElement);document.addEventListener('mousemove',e=>{if(locked&&!paused){player.yaw-=e.movementX*.0022;player.pitch=clamp(player.pitch-e.movementY*.0018,-1.3,1.3)}});renderer.domElement.addEventListener('click',()=>{if(started&&!locked&&!paused)lock()});document.addEventListener('mousedown',e=>{if(e.button===0&&started&&!paused&&locked)useWeapon()});
+function renderInventory(){const el=document.querySelector('#inventory-list');el.innerHTML='';for(const [k,v]of Object.entries(items)){const d=document.createElement('div');d.className='slot';d.innerHTML=`${labels[k]} <b style="float:right">${v}</b><small>${k==='arrows'?'Ammunition':k==='meat'?'Hunting supply':'Gathered field resource'}</small>`;el.append(d)}}
+const recipes=[{id:'arrows',name:'Craft 3 arrows',needs:{wood:1,fiber:1},gives:{arrows:3},desc:'Wood shaft and plant-fiber fletching.'},{id:'bandage',name:'Make a bandage',needs:{fiber:3},gives:{bandage:1},desc:'A field dressing for wounds.'},{id:'campfire',name:'Build a campfire',needs:{wood:5,stone:3},build:'campfire',desc:'Warmth and a safe place to cook.'},{id:'shelter',name:'Build a lean-to',needs:{wood:8,fiber:4},build:'shelter',desc:'A basic shelter and a saved respawn point.'}];function renderCraft(){const el=document.querySelector('#craft-list');el.innerHTML='';for(const r of recipes){const row=document.createElement('div');row.className='row';const needs=Object.entries(r.needs).map(([k,v])=>`${labels[k]} ${v}`).join(' · ');row.innerHTML=`<div><b>${r.name}</b><small style="display:block;color:#aab3a0;margin-top:5px">${r.desc}<br>Needs: ${needs}</small></div><button>${r.build?'BUILD':'CRAFT'}</button>`;row.querySelector('button').onclick=()=>craft(r);el.append(row)}}function craft(r){if(Object.entries(r.needs).some(([k,v])=>items[k]<v)){toast('Not enough materials');tone(90,.1,'square');return}for(const[k,v]of Object.entries(r.needs))items[k]-=v;if(r.build){const obj=makeBuild(r.build);const fwd=new THREE.Vector3(-Math.sin(player.yaw),0,-Math.cos(player.yaw));obj.position.set(player.pos.x+fwd.x*3,heightAt(player.pos.x+fwd.x*3,player.pos.z+fwd.z*3),player.pos.z+fwd.z*3);obj.rotation.y=player.yaw;scene.add(obj);built.push(obj);if(r.build==='campfire'&&quest===2){questSet(3);toast('Campfire built · survive until morning')}else toast(`${r.name} complete`)}else{for(const[k,v]of Object.entries(r.gives))items[k]+=v;toast(`${r.name} complete`)}tone(420,.12,'triangle');renderCraft();save()}
+const raycaster=new THREE.Raycaster();function targetHit(){raycaster.setFromCamera(new THREE.Vector2(0,0),camera);const candidates=[...pickups.map(p=>p.group),...wreck.children,...animals.filter(a=>a.g.visible).map(a=>a.g)];const hits=raycaster.intersectObjects(candidates,true);return hits.find(h=>h.distance<4)}function interact(){if(!started||paused)return;const hit=targetHit();if(hit){const pickup=pickups.find(p=>p.group===hit.object||p.group===hit.object.parent);if(pickup){items[pickup.type]+=pickup.n;scene.remove(pickup.group);pickups.splice(pickups.indexOf(pickup),1);toast(`Collected ${pickup.n} ${labels[pickup.type]}`);tone(520,.07);if(quest===0&&player.pos.distanceTo(wreck.position)<14){questSet(1)}return}if(player.pos.distanceTo(wreck.position)<13){if(quest===0)questSet(1);else if(quest===1){items.arrows+=5;items.bandage+=1;questSet(2);toast('Beacon recovered · supplies found')}else if(quest===4){toast('Emergency beacon transmitting');tone(660,.5,'sine',.06);questSet(4)}else toast('Wreckage searched')}return}let nearest=null,dist=2.6;for(const p of pickups){const d=player.pos.distanceTo(p.group.position);if(d<dist){dist=d;nearest=p}}if(nearest){items[nearest.type]+=nearest.n;scene.remove(nearest.group);pickups.splice(pickups.indexOf(nearest),1);toast(`Collected ${labels[nearest.type]}`)}else toast('Nothing in reach')}
+function useWeapon(){if(shotCooldown>0)return;shotCooldown=weapon==='bow'?.7:.45;if(weapon==='knife'){noise(.12,.04);const origin=camera.position.clone(),dir=new THREE.Vector3();camera.getWorldDirection(dir);let target=null,best=2.7;for(const a of animals){if(!a.g.visible)continue;const p=a.g.position.clone().add(new THREE.Vector3(0,1,0)),d=p.distanceTo(origin),toward=p.sub(origin).normalize();if(d<best&&toward.dot(dir)>.45){best=d;target=a}}if(target){target.hp--;target.state=target.kind==='deer'?'flee':'attack';if(target.hp<=0){target.g.visible=false;items.meat+=target.kind==='deer'?2:1;toast(`${target.kind.toUpperCase()} down · meat collected`)}else toast('Hit')}else toast('Knife swing');return}if(items.arrows<=0){toast('No arrows · craft or find supplies');tone(100,.1,'square');return}items.arrows--;tone(350,.09,'triangle',.04);noise(.2,.03);raycaster.setFromCamera(new THREE.Vector2(0,0),camera);const hits=raycaster.intersectObjects(animals.filter(a=>a.g.visible).map(a=>a.g),true);if(hits.length&&hits[0].distance<45){const animal=animals.find(a=>a.g===hits[0].object||a.g.children.includes(hits[0].object));if(animal){animal.hp-=2;animal.state=animal.kind==='deer'?'flee':'attack';if(animal.hp<=0){animal.g.visible=false;items.meat+=animal.kind==='deer'?2:1;toast(`${animal.kind.toUpperCase()} hunted · collect meat`)}else toast('Arrow hit')}}else toast('Arrow loosed');}
+function eat(){if(items.berries>0){items.berries--;player.hunger=clamp(player.hunger+24,0,100);toast('Ate wild berries')}else if(items.meat>0&&built.some(b=>b.userData.flame)){items.meat--;player.hunger=clamp(player.hunger+38,0,100);player.hp=clamp(player.hp+8,0,100);toast('Cooked meat restored strength')}else toast('Need berries or a campfire to cook meat')}
+function updateAnimals(dt,time){for(const a of animals){if(!a.g.visible)continue;const g=a.g,dx=player.pos.x-g.position.x,dz=player.pos.z-g.position.z,d=Math.hypot(dx,dz);a.timer-=dt;a.attack=Math.max(0,a.attack-dt);if(a.kind==='wolf'&&d<19)a.state='alert';if(a.kind==='wolf'&&d<10)a.state='attack';if(a.kind==='deer'&&d<12)a.state='flee';if(a.state==='attack'&&a.kind==='wolf'&&d<1.6){if(a.attack<=0){player.hp-=9;a.attack=1.25;noise(.18,.06);tone(65,.18,'sawtooth',.04);toast('WOLF ATTACK · GET AWAY');if(player.hp<=0)die()}}let speed=0;if(a.state==='attack'&&d>1.3){g.position.x+=dx/d*a.speed*dt;g.position.z+=dz/d*a.speed*dt;speed=a.speed;g.rotation.y=Math.atan2(dx,dz)}else if(a.state==='flee'&&d<25){g.position.x-=dx/Math.max(1,d)*a.speed*1.8*dt;g.position.z-=dz/Math.max(1,d)*a.speed*1.8*dt;speed=a.speed*1.8;g.rotation.y=Math.atan2(-dx,-dz)}else{if(a.state==='alert'&&d>21)a.state='wander';if(a.timer<=0){a.dir=rnd()*Math.PI*2;a.timer=2+rnd()*5}if(a.state==='wander'){g.position.x+=Math.sin(a.dir)*.35*dt;g.position.z+=Math.cos(a.dir)*.35*dt;g.rotation.y=a.dir;speed=.35}}g.position.y=heightAt(g.position.x,g.position.z);g.children.forEach((c,i)=>{if(i>1)c.rotation.x=Math.sin(time*8+i)*Math.min(.4,speed*.2)})}}
+function die(){if(!player.alive)return;player.alive=false;document.exitPointerLock?.();setScreen('death',true);document.querySelector('#death-message').textContent=`You survived ${Math.floor(dayTime/1440)+1} day(s). The wilderness keeps what it takes.`;tone(60,.7,'sawtooth',.06);save()}
+function updateHUD(){document.querySelector('#hp').style.width=player.hp+'%';document.querySelector('#hpv').textContent=Math.ceil(player.hp);document.querySelector('#stam').style.width=player.stamina+'%';document.querySelector('#stamv').textContent=Math.ceil(player.stamina);document.querySelector('#food').style.width=player.hunger+'%';document.querySelector('#foodv').textContent=Math.ceil(player.hunger);document.querySelector('#ammo').textContent=`ARROWS ${items.arrows}`;document.querySelector('#day').textContent=String(Math.floor(dayTime/1440)+1).padStart(2,'0');const m=Math.floor(dayTime%1440);document.querySelector('#clock').textContent=`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;document.querySelector('#coords').textContent=`${Math.round(player.pos.x)} / ${Math.round(player.pos.z)} · ${weapon.toUpperCase()}`}
+function update(dt,time){if(!started||paused||!player.alive)return;dayTime+=dt*3.1;shotCooldown=Math.max(0,shotCooldown-dt);let f=new THREE.Vector3(-Math.sin(player.yaw),0,-Math.cos(player.yaw)),r=new THREE.Vector3(Math.cos(player.yaw),0,-Math.sin(player.yaw)),move=new THREE.Vector3();if(keys.KeyW)move.add(f);if(keys.KeyS)move.sub(f);if(keys.KeyD)move.add(r);if(keys.KeyA)move.sub(r);if(move.lengthSq())move.normalize();const sprint=(keys.ShiftLeft||keys.ShiftRight)&&move.lengthSq()>0&&player.stamina>0,speed=sprint?8:4.2;if(move.lengthSq()){player.pos.addScaledVector(move,speed*dt);player.stamina=clamp(player.stamina-(sprint?22:-10)*dt,0,100)}else player.stamina=clamp(player.stamina+13*dt,0,100);if(keys.Space&&player.pos.y<=heightAt(player.pos.x,player.pos.z)+1.72)player.vy=5;player.vy-=14*dt;player.pos.y+=player.vy*dt;const floor=heightAt(player.pos.x,player.pos.z)+1.72;if(player.pos.y<floor){player.pos.y=floor;player.vy=0}player.pos.x=clamp(player.pos.x,-198,198);player.pos.z=clamp(player.pos.z,-198,198);camera.position.copy(player.pos);camera.rotation.order='YXZ';camera.rotation.y=player.yaw;camera.rotation.x=player.pitch;camera.position.y+=Math.sin(time*(sprint?13:8))*.018*(move.lengthSq()?1:0);player.hunger=clamp(player.hunger-dt*.24,0,100);if(player.hunger<15)player.hp=clamp(player.hp-dt*.5,0,100);if(keys.KeyR&&weapon==='bow'){items.arrows+=0;keys.KeyR=false;toast(`Arrows in pack: ${items.arrows}`)}if(keys.KeyE){}updateAnimals(dt,time);for(const p of pickups){p.group.rotation.y+=dt*.7;p.group.position.y=heightAt(p.group.position.x,p.group.position.z)+.12+Math.sin(time*2+p.group.position.x)*.07}smoke.forEach((m,i)=>{m.position.y=3+(time*.7+i*.65)%12;m.position.x=34+Math.sin(time*.4+i)*.8;m.material.opacity=.16*(1-(m.position.y-3)/16)});built.forEach(b=>{if(b.userData.flame)b.userData.flame.scale.y=.7+Math.sin(time*13)*.25});if(grassMat.userData.shader)grassMat.userData.shader.uniforms.windTime.value=time;const phase=dayTime/1440*Math.PI*2-Math.PI/2,light=clamp(Math.sin(phase)*.7+.35,.1,1);sun.position.set(Math.cos(phase)*120,Math.sin(phase)*150,45);sun.intensity=.25+light*2;hemi.intensity=.3+light;scene.fog.color.setHSL(.49,.12,.19+light*.37);scene.background.copy(scene.fog.color);renderer.toneMappingExposure=.8+light*.34;const hit=targetHit();const hint=document.querySelector('#hint');hint.textContent=hit?'[ E ] SEARCH / COLLECT':'[ I ] INVENTORY   [ C ] CRAFT   [ B ] BUILD';hint.style.opacity=locked?.85:.5;if(player.pos.distanceTo(wreck.position)<13&&quest===0)questSet(1);if(quest===3&&Math.floor(dayTime/1440)>0)questSet(4);if(Math.random()<dt*.018)tone(220+rnd()*120,.4,'sine',.006);updateHUD();if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)document.querySelector('#toast').classList.remove('on')}}
+// Make B jump to crafting with the build recipes emphasized; X eats.
+document.addEventListener('keydown',e=>{if(e.code==='KeyB'&&started)toggleMenu('crafting');if(e.code==='KeyX'&&started&&!paused)eat();if(e.code==='KeyF'&&started&&!paused){if(items.bandage>0&&player.hp<100){items.bandage--;player.hp=clamp(player.hp+35,0,100);toast('Bandage applied')}}});
+let prev=performance.now(),elapsed=0;function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-prev)/1000,.04);prev=now;elapsed+=dt;update(dt,elapsed);renderer.render(scene,camera)}requestAnimationFrame(frame);
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script></body></html>
