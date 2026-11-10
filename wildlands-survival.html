@@ -1,58 +1,1307 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#101813"><title>WILDLANDS — Last Flight</title>
-<style>
-:root{--ink:#edf0df;--muted:#aab3a0;--moss:#c5d49e;--glass:rgba(13,20,16,.82);--line:rgba(234,239,218,.18)}*{box-sizing:border-box}html,body,#game{margin:0;width:100%;height:100%;overflow:hidden;background:#19241d;color:var(--ink);font-family:Inter,system-ui,Arial,sans-serif}#game{position:fixed;inset:0}canvas{display:block}.shade{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 42%,rgba(4,8,6,.5) 100%);z-index:1}.top{position:fixed;z-index:2;top:16px;left:20px;right:20px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}.logo,.stats,.quest,.bottom,.hint{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px)}.logo{padding:10px 13px;font-size:11px;font-weight:800;letter-spacing:.18em}.logo small{display:block;color:var(--muted);font:8px monospace;margin-top:4px;letter-spacing:.12em}.stats{padding:8px 11px;width:210px;font:9px monospace;letter-spacing:.08em}.statline{display:flex;align-items:center;gap:8px;margin:6px 0}.bar{height:5px;flex:1;background:#ffffff20}.bar i{display:block;height:100%;background:#c9d59c}.bar.hp i{background:#d38c70}.bar.food i{background:#d6b974}.stats footer{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:7px;margin-top:6px;color:var(--muted)}.quest{position:fixed;z-index:2;top:108px;left:20px;padding:12px 14px;width:244px;font-size:11px;pointer-events:none}.quest label{display:block;font:8px monospace;letter-spacing:.16em;color:var(--moss);margin-bottom:7px}.quest strong{font-weight:600}.quest small{display:block;color:var(--muted);margin-top:5px;font-size:10px;line-height:1.5}.cross{position:fixed;z-index:2;left:50%;top:50%;width:14px;height:14px;transform:translate(-50%,-50%);pointer-events:none}.cross:before,.cross:after{content:'';position:absolute;background:#fff;opacity:.85;box-shadow:0 0 4px #222}.cross:before{width:1px;height:14px;left:6px}.cross:after{height:1px;width:14px;top:6px}.bottom{position:fixed;z-index:2;bottom:15px;left:20px;right:20px;display:flex;justify-content:space-between;align-items:center;padding:9px 12px;font:8px monospace;letter-spacing:.07em;pointer-events:none}.bottom span{color:var(--muted)}.hint{position:fixed;z-index:3;left:50%;top:calc(50% + 24px);transform:translateX(-50%);padding:8px 11px;font:9px monospace;letter-spacing:.1em;opacity:0;transition:opacity .15s;pointer-events:none}.toast{position:fixed;z-index:6;left:50%;top:27%;transform:translateX(-50%);background:var(--glass);border:1px solid var(--line);padding:10px 15px;font:9px monospace;letter-spacing:.12em;opacity:0;transition:opacity .2s;pointer-events:none}.toast.on{opacity:1}.overlay{position:fixed;z-index:5;inset:0;background:linear-gradient(90deg,rgba(6,11,8,.86),rgba(7,12,9,.35)),linear-gradient(0deg,rgba(7,12,9,.52),transparent 40%);display:flex;align-items:center;padding:7vw;transition:opacity .25s}.overlay.hide{display:none}.card{width:min(540px,92vw);padding:26px;background:rgba(13,20,16,.87);border:1px solid var(--line);box-shadow:0 24px 80px #0006}.eyebrow{font:9px monospace;letter-spacing:.16em;color:var(--moss)}h1{font-size:clamp(50px,7vw,86px);line-height:.91;letter-spacing:-.07em;margin:19px 0 18px}h1 em{font-weight:400;color:var(--moss)}p{max-width:430px;color:#c5cabb;font-size:12px;line-height:1.75}button{font:10px monospace;letter-spacing:.11em;background:var(--moss);color:#152018;border:0;padding:12px 14px;margin-top:8px;cursor:pointer}button:hover{background:#e2ecc1}.menu-actions{display:flex;gap:8px;flex-wrap:wrap}.subtle{background:#26332a;color:var(--ink);border:1px solid var(--line)}.screen{position:fixed;z-index:7;inset:0;display:none;place-items:center;background:#080d0bd9;padding:18px}.screen.show{display:grid}.sheet{width:min(720px,94vw);max-height:86vh;overflow:auto;background:#111a15;border:1px solid var(--line);padding:22px}.sheet h2{margin:0 0 12px;font-size:22px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:9px}.slot,.row{padding:12px;background:#1a261e;border:1px solid #ffffff18;font-size:12px}.slot small,.row small{display:block;color:var(--muted);margin-top:5px;line-height:1.5}.close{float:right;margin:0 0 12px}.row{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:9px 0}.row button{margin:0;white-space:nowrap}.controls{font:10px monospace;color:var(--muted);line-height:2}.notice{color:var(--moss);font:10px monospace;margin:12px 0}.save-row{display:flex;gap:8px;flex-wrap:wrap}.file-input{display:none}@media(max-width:650px){.top{left:9px;right:9px;top:9px}.logo{font-size:9px}.stats{width:168px}.quest{top:99px;left:9px;width:200px}.bottom{left:9px;right:9px;bottom:9px}.bottom span:nth-child(2){display:none}.overlay{padding:5vw}.card{padding:20px}}
-</style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js"}}</script></head>
-<body><div id="game"></div><div class="shade"></div><div class="top"><div class="logo">WILDLANDS <small>LAST FLIGHT · CASCADE WILDERNESS</small></div><div class="stats"><div class="statline">HEALTH <div class="bar hp"><i id="hp"></i></div><b id="hpv">100</b></div><div class="statline">STAMINA <div class="bar"><i id="stam"></i></div><b id="stamv">100</b></div><div class="statline">HUNGER <div class="bar food"><i id="food"></i></div><b id="foodv">100</b></div><footer><span>DAY <b id="day">01</b></span><span id="clock">08:00</span><span id="ammo">ARROWS 5</span></footer></div></div><div class="quest"><label>FIELD OBJECTIVE</label><strong id="quest-title"></strong><small id="quest-detail"></small></div><div class="cross"></div><div class="hint" id="hint"></div><div class="toast" id="toast"></div><div class="bottom"><span>WASD MOVE · SHIFT SPRINT · SPACE JUMP · E INTERACT</span><span>1 KNIFE · 2 BOW · 3 RIFLE · R RELOAD · I PACK · C CRAFT · ESC MENU</span><span id="coords">CASCADE FOREST</span></div>
-<div class="overlay" id="start"><div class="card"><div class="eyebrow">SURVIVAL JOURNAL · 01 / CASCADE WILDERNESS</div><h1>LAST<br><em>FLIGHT.</em></h1><p>Your charter plane came down in the mountains. Find the emergency radio, gather supplies, craft a camp, and survive the wildlife long enough to call for rescue.</p><div class="menu-actions"><button id="new-game">START NEW EXPEDITION</button><button class="subtle" id="continue">CONTINUE SAVED GAME</button><button class="subtle" id="import-open">IMPORT SAVE</button><input class="file-input" id="import-file" type="file" accept="application/json"></div><p class="controls">WASD move · mouse look · left click use weapon · E interact · I pack · C craft · 1/2/3 weapon · X eat · F bandage · Esc menu</p><p class="controls">This browser game needs internet for its Three.js engine. Save the HTML, then run it from a local web server (instructions below).</p></div></div>
-<div class="screen" id="pause"><div class="sheet"><button class="close subtle" data-close="pause">RESUME</button><div class="eyebrow">FIELD MENU</div><h2>Expedition paused</h2><p class="controls">Your progress autosaves locally. Export a save JSON to move it to another browser or computer.</p><div class="save-row"><button id="save-game">SAVE NOW</button><button class="subtle" id="download-save">EXPORT SAVE FILE</button><button class="subtle" id="import-pause">IMPORT SAVE FILE</button><button class="subtle" id="to-title">RETURN TO TITLE</button></div><p class="notice" id="save-status"></p></div></div>
-<div class="screen" id="inventory"><div class="sheet"><button class="close subtle" data-close="inventory">CLOSE</button><div class="eyebrow">FIELD PACK</div><h2>Inventory</h2><div class="grid" id="inventory-list"></div><p class="controls">X eat berries / cooked meat · F apply a bandage · Resources are gathered with E near glowing bundles.</p></div></div>
-<div class="screen" id="crafting"><div class="sheet"><button class="close subtle" data-close="crafting">CLOSE</button><div class="eyebrow">FIELDCRAFT · BUILDING</div><h2>Craft & build</h2><div id="craft-list"></div></div></div>
-<div class="screen" id="death"><div class="sheet"><div class="eyebrow">FIELD JOURNAL · ENTRY ENDED</div><h2>Lost to the wild.</h2><p id="death-message"></p><button id="death-restart">NEW EXPEDITION</button><button class="subtle" id="death-title">RETURN TO TITLE</button></div></div>
-<script type="module">
-import * as THREE from 'three';
-const mount=document.querySelector('#game'),scene=new THREE.Scene();scene.background=new THREE.Color(0x9eb5b1);scene.fog=new THREE.FogExp2(0x9eb5b1,.0048);const camera=new THREE.PerspectiveCamera(76,innerWidth/innerHeight,.1,850);const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;mount.appendChild(renderer.domElement);
-const clamp=THREE.MathUtils.clamp,rnd=(()=>{let s=29471;return()=>((s=(s*48271)%2147483647)-1)/2147483646})();function texture(base,kind,seed){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,512,512);for(let i=0;i<4200;i++){const a=rnd()*512,b=rnd()*512,r=1+rnd()*10;if(kind==='bark'){x.strokeStyle=`rgba(${28+rnd()*50|0},${24+rnd()*43|0},${17+rnd()*28|0},${.12+rnd()*.35})`;x.lineWidth=1+rnd()*3;x.beginPath();x.moveTo(a,b);x.lineTo(a+(rnd()-.5)*8,b+r*3);x.stroke()}else{x.fillStyle=kind==='ground'?`rgba(${40+rnd()*60|0},${42+rnd()*55|0},${28+rnd()*40|0},${rnd()*.18})`:`rgba(230,235,215,${rnd()*.18})`;x.beginPath();x.ellipse(a,b,r,rnd()*r,0,0,6.3);x.fill()}}if(kind==='ground')for(let i=0;i<180;i++){x.strokeStyle=`rgba(166,150,112,${rnd()*.16})`;x.beginPath();x.moveTo(rnd()*512,rnd()*512);x.lineTo(rnd()*512,rnd()*512);x.stroke()}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t}
-function heightAt(x,z){return Math.sin(x*.014)*3+Math.cos(z*.017)*3.2+Math.sin((x+z)*.009)*3+Math.cos(x*.035-z*.028)*.85+Math.sin(z*.06)*.35}
-// Expanded 720m terrain, high detail ground texture, fog and dynamic sun/shadows
-const worldSize=720,seg=176,gp=[],gu=[],gi=[];for(let z=0;z<=seg;z++)for(let x=0;x<=seg;x++){const wx=(x/seg-.5)*worldSize,wz=(z/seg-.5)*worldSize;gp.push(wx,heightAt(wx,wz),wz);gu.push(x/seg*42,z/seg*42);if(x<seg&&z<seg){const a=z*(seg+1)+x,d=a+seg+1;gi.push(a,d,a+1,a+1,d,d+1)}}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(gp,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(gu,2));geo.setIndex(gi);geo.computeVertexNormals();const land=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({map:texture('#555c48','ground'),roughness:1}));land.receiveShadow=true;scene.add(land);
-const sky=new THREE.Mesh(new THREE.SphereGeometry(800,28,18),new THREE.MeshBasicMaterial({color:0x9dbab8,side:THREE.BackSide}));scene.add(sky);const hemi=new THREE.HemisphereLight(0xc9dcda,0x414332,1.1);scene.add(hemi);const sun=new THREE.DirectionalLight(0xffe6c1,2.2);sun.position.set(-80,120,40);sun.castShadow=true;sun.shadow.mapSize.set(1536,1536);sun.shadow.camera.left=-120;sun.shadow.camera.right=120;sun.shadow.camera.top=120;sun.shadow.camera.bottom=-120;sun.shadow.bias=-.0002;scene.add(sun);
-const bark=new THREE.MeshStandardMaterial({map:texture('#514638','bark'),color:0xb1a081,roughness:.96}),leavesA=new THREE.MeshStandardMaterial({map:texture('#3d553e','leaf'),color:0x99a982,roughness:1}),leavesB=new THREE.MeshStandardMaterial({map:texture('#536447','leaf'),color:0xa1ad7f,roughness:1}),stone=new THREE.MeshStandardMaterial({map:texture('#6c7068','ground'),color:0xb0afa1,roughness:1});const dummy=new THREE.Object3D();
-const treeN=1900,trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.25,.46,1,7),bark,treeN),crowns=new THREE.InstancedMesh(new THREE.ConeGeometry(1,1.7,7),leavesA,treeN*2),crown2=new THREE.InstancedMesh(new THREE.ConeGeometry(1,1.4,7),leavesB,treeN);trunks.castShadow=true;crowns.castShadow=true;crown2.castShadow=true;let c2=0;
-for(let i=0;i<treeN;i++){let x,z;do{x=(rnd()-.5)*680;z=(rnd()-.5)*680}while(Math.hypot(x,z)<16||((x>20&&x<65)&&(z>-18&&z<30)));const y=heightAt(x,z),h=7+rnd()*12,r=.65+rnd()*1;dummy.position.set(x,y+h*.34,z);dummy.scale.set(r,h*.68,r);dummy.rotation.y=rnd()*6.28;dummy.updateMatrix();trunks.setMatrixAt(i,dummy.matrix);for(let l=0;l<2;l++){dummy.position.set(x,y+h*.5+l*h*.22,z);dummy.scale.set(h*(.19+rnd()*.055),h*(.58+rnd()*.1),h*(.19+rnd()*.055));dummy.rotation.y=rnd()*6.28;dummy.updateMatrix();crowns.setMatrixAt(i*2+l,dummy.matrix)}dummy.position.set(x,y+h*.79,z);dummy.scale.set(h*.16,h*.31,h*.16);dummy.rotation.y=rnd()*6.28;dummy.updateMatrix();crown2.setMatrixAt(c2++,dummy.matrix)}scene.add(trunks,crowns,crown2);
-const rockN=780,rocks=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,1),stone,rockN);rocks.castShadow=true;for(let i=0;i<rockN;i++){const a=rnd()*6.28,r=12+Math.sqrt(rnd())*330,x=Math.cos(a)*r,z=Math.sin(a)*r;dummy.position.set(x,heightAt(x,z)+.1,z);dummy.scale.set(.2+rnd()*1.5,.15+rnd()*.9,.2+rnd()*1.2);dummy.rotation.set(rnd(),rnd()*6,rnd());dummy.updateMatrix();rocks.setMatrixAt(i,dummy.matrix)}scene.add(rocks);
-// Animated instanced grass and distant water
-const blade=new THREE.BufferGeometry();blade.setAttribute('position',new THREE.Float32BufferAttribute([-.035,0,0,.035,0,0,0,.5,0],3));blade.setIndex([0,2,1]);blade.computeVertexNormals();const grassMat=new THREE.MeshStandardMaterial({color:0x84976a,side:THREE.DoubleSide,roughness:1});grassMat.onBeforeCompile=s=>{s.uniforms.windTime={value:0};s.vertexShader='uniform float windTime;\n'+s.vertexShader;s.vertexShader=s.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.x += sin(windTime + instanceMatrix[3][0]*.15 + instanceMatrix[3][2]*.08) * position.y * .2;')};grassMat.userData.shader=null;const grass=new THREE.InstancedMesh(blade,grassMat,17000);grass.frustumCulled=false;for(let i=0;i<17000;i++){const a=rnd()*6.28,r=10+Math.sqrt(rnd())*315,x=Math.cos(a)*r,z=Math.sin(a)*r;dummy.position.set(x,heightAt(x,z),z);dummy.scale.setScalar(.55+rnd());dummy.rotation.y=rnd()*6.28;dummy.updateMatrix();grass.setMatrixAt(i,dummy.matrix)}scene.add(grass);
-const lake=new THREE.Mesh(new THREE.PlaneGeometry(150,120),new THREE.MeshStandardMaterial({color:0x3b6870,roughness:.2,metalness:.18,transparent:true,opacity:.88}));lake.rotation.x=-Math.PI/2;lake.position.set(145,-2,-90);scene.add(lake);
-// Wrecked plane, searchable radio beacon, smoke plume.
-const wreck=new THREE.Group();wreck.position.set(42,heightAt(42,8),8);wreck.rotation.y=-.42;wreck.rotation.z=-.13;const metal=new THREE.MeshStandardMaterial({color:0xb8b8a5,metalness:.5,roughness:.48}),dark=new THREE.MeshStandardMaterial({color:0x38413c,metalness:.2,roughness:.7}),orange=new THREE.MeshStandardMaterial({color:0xb77042,roughness:.8});function planePart(g,m,p,r=[0,0,0]){const o=new THREE.Mesh(g,m);o.position.set(...p);o.rotation.set(...r);o.castShadow=true;wreck.add(o);return o}planePart(new THREE.CylinderGeometry(.8,1.15,13,12,1,true),metal,[0,1.4,0],[0,0,Math.PI/2]);planePart(new THREE.ConeGeometry(.8,2,10),metal,[7.5,1.4,0],[0,0,-Math.PI/2]);planePart(new THREE.BoxGeometry(2,8,.22),dark,[-1,1.4,0],[.12,0,.26]);planePart(new THREE.BoxGeometry(5,.18,1),orange,[-4,1.2,0],[0,.2,.1]);planePart(new THREE.BoxGeometry(.2,2,.8),orange,[5,3,0],[0,0,.2]);for(let i=0;i<5;i++)planePart(new THREE.BoxGeometry(.3,.15,1.2),dark,[-3+i*1.1,1.2,1.2],[0,rnd(),.5]);scene.add(wreck);const smoke=[];for(let i=0;i<36;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.55+rnd(),6,6),new THREE.MeshBasicMaterial({color:0x45473c,transparent:true,opacity:.14,depthWrite:false}));scene.add(m);smoke.push(m)}
-// Player first-person camera and visible simple weapons
-const cameraRig=new THREE.Group();camera.add(cameraRig);const handMat=new THREE.MeshStandardMaterial({color:0x9e876d,roughness:.9}),weaponMat=new THREE.MeshStandardMaterial({color:0x584b3d,roughness:.8}),arm=new THREE.Mesh(new THREE.CapsuleGeometry(.085,.44,3,6),handMat);arm.position.set(.32,-.34,-.53);arm.rotation.z=-.38;cameraRig.add(arm);const bow=new THREE.Mesh(new THREE.TorusGeometry(.24,.025,6,24,Math.PI),weaponMat);bow.position.set(.3,-.25,-.6);bow.rotation.z=-Math.PI/2;cameraRig.add(bow);const knifeMesh=new THREE.Mesh(new THREE.ConeGeometry(.045,.5,5),new THREE.MeshStandardMaterial({color:0xc2c9bd,metalness:.72,roughness:.3}));knifeMesh.position.set(.28,-.35,-.65);knifeMesh.rotation.z=-.75;cameraRig.add(knifeMesh);const rifle=new THREE.Group();const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.035,.045,.72,8),dark);barrel.rotation.x=Math.PI/2;barrel.position.set(.31,-.28,-.78);rifle.add(barrel);const stock=new THREE.Mesh(new THREE.BoxGeometry(.13,.14,.42),weaponMat);stock.position.set(.31,-.34,-.43);rifle.add(stock);cameraRig.add(rifle);scene.add(camera);
-const player={pos:new THREE.Vector3(0,heightAt(0,0)+1.72,0),yaw:0,pitch:0,vy:0,hp:100,stamina:100,hunger:100,alive:true};camera.position.copy(player.pos);const inv={wood:0,stone:0,fiber:0,berries:0,meat:0,arrows:5,bullets:8,bandage:1,radio:0};const labels={wood:'Wood',stone:'Stone',fiber:'Plant fiber',berries:'Berries',meat:'Raw meat',arrows:'Arrows',bullets:'Rifle rounds',bandage:'Bandages',radio:'Emergency radio'};
-const pickups=[];const pcol={wood:0xa77546,stone:0xaaa99a,fiber:0x95ac66,berries:0xc8585a,arrows:0xd9c38b,bandage:0xe9e5d6,bullets:0x9ba9a5};function addPickup(type,n,x,z){const g=new THREE.Group(),mat=new THREE.MeshStandardMaterial({color:pcol[type],emissive:pcol[type],emissiveIntensity:.2,roughness:.55});const m=new THREE.Mesh(new THREE.IcosahedronGeometry(.22,0),mat);m.position.y=.35;g.add(m);const ring=new THREE.Mesh(new THREE.TorusGeometry(.34,.018,4,16),new THREE.MeshBasicMaterial({color:pcol[type],transparent:true,opacity:.65}));ring.rotation.x=Math.PI/2;g.add(ring);g.position.set(x,heightAt(x,z),z);scene.add(g);pickups.push({type,n,group:g})}for(let i=0;i<260;i++){let x,z;do{x=(rnd()-.5)*500;z=(rnd()-.5)*500}while(Math.hypot(x,z)<8);const type=['wood','wood','wood','stone','fiber','berries','arrows','bullets','bandage'][Math.floor(rnd()*9)];addPickup(type,type==='wood'?2+Math.floor(rnd()*4):1,x,z)}
-// Deer, wolves, black bears, and boar use separate alert/flee/attack behavior.
-const animals=[];function makeAnimal(kind,x,z){const g=new THREE.Group(),fur=new THREE.MeshStandardMaterial({color:({deer:0x92704e,wolf:0x55584c,bear:0x39362f,boar:0x655747})[kind],roughness:.96}),darkMat=new THREE.MeshStandardMaterial({color:0x282b27,roughness:1});const scale=kind==='bear'?1.5:kind==='deer'?1:kind==='boar'?1.12:.9;const body=new THREE.Mesh(new THREE.CapsuleGeometry(kind==='bear'?.54:.4,kind==='deer'?1:.86,3,7),fur);body.rotation.z=Math.PI/2;body.scale.setScalar(scale);body.position.y=(kind==='deer'?1.05:.78)*scale;body.castShadow=true;g.add(body);const head=new THREE.Mesh(new THREE.SphereGeometry(kind==='bear'?.33:.27,9,8),fur);head.position.set(.55*scale,(kind==='deer'?1.5:1.05)*scale,0);g.add(head);for(let i=0;i<4;i++){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.06*scale,.08*scale,(kind==='deer'?.72:.48)*scale,5),darkMat);leg.position.set((i<2?.3:-.3)*scale,.35*scale,(i%2?.2:-.2)*scale);g.add(leg)}if(kind==='deer')for(const s of [-1,1]){const ant=new THREE.Mesh(new THREE.CylinderGeometry(.02,.045,.58,5),darkMat);ant.position.set(.55,1.85,s*.13);ant.rotation.z=-.25;g.add(ant)}g.position.set(x,heightAt(x,z),z);scene.add(g);animals.push({kind,g,state:'wander',timer:rnd()*5,hp:kind==='bear'?5:kind==='wolf'?3:kind==='boar'?3:1,attack:0,dir:rnd()*6.28,speed:kind==='bear'?2.4:kind==='wolf'?3.2:kind==='boar'?2.8:1.8,dead:false})}for(let i=0;i<28;i++){const a=rnd()*6.28,r=45+rnd()*250;makeAnimal(i<9?'wolf':i<15?'deer':i<20?'boar':'bear',Math.cos(a)*r,Math.sin(a)*r)}
-let quest=0,weapon='knife',paused=true,started=false,dayTime=480,toastTimer=0,shotCooldown=0,autosave=0;const SAVE_KEY='wildlands-last-flight-v3';const quests=[['Find the crash site','Follow the smoke plume east; the wreck is marked by black smoke.'],['Recover the emergency radio','Search the wreckage with E from close range.'],['Gather camp supplies','Collect 5 wood, 3 stone, and 2 plant fiber.'],['Build a campfire','Open CRAFT and build a campfire to survive the cold.'],['Hunt and prepare food','Find berries, or hunt wildlife and cook meat at your campfire.'],['Signal for rescue','Return to the wreck and activate your radio with E.']];function setQuest(n){quest=clamp(n,0,quests.length-1);document.querySelector('#quest-title').textContent=quests[quest][0];document.querySelector('#quest-detail').textContent=quests[quest][1];save(false)}setQuest(0);
-const built=[];function buildObject(type){const g=new THREE.Group(),mat=new THREE.MeshStandardMaterial({color:type==='campfire'?0x574636:0x78583a,roughness:1});if(type==='campfire'){for(let i=0;i<4;i++){const log=new THREE.Mesh(new THREE.CylinderGeometry(.08,.09,.9,6),mat);log.position.y=.16;log.rotation.set(0,i*Math.PI/4,Math.PI/2);g.add(log)}const light=new THREE.PointLight(0xff8736,2.5,12);light.position.y=.7;g.add(light);const flame=new THREE.Mesh(new THREE.ConeGeometry(.22,.7,6),new THREE.MeshBasicMaterial({color:0xff9a34}));flame.position.y=.6;g.add(flame);g.userData.flame=flame}else{for(let i=0;i<6;i++){const p=new THREE.Mesh(new THREE.BoxGeometry(2.6,.2,.17),mat);p.position.set(0,.35+i*.24,0);g.add(p)}}return g}
-function save(show=true){try{const data={version:3,pos:player.pos.toArray(),yaw:player.yaw,hp:player.hp,stamina:player.stamina,hunger:player.hunger,inv,quest,dayTime,pickups:pickups.map(p=>({type:p.type,n:p.n,x:p.group.position.x,z:p.group.position.z})),animals:animals.map(a=>({x:a.g.position.x,z:a.g.position.z,hp:a.hp,alive:a.g.visible,state:a.state})),built:built.map(b=>({type:b.userData.type,x:b.position.x,z:b.position.z,rotation:b.rotation.y}))};localStorage.setItem(SAVE_KEY,JSON.stringify(data));if(show)document.querySelector('#save-status').textContent='Saved locally in this browser.';return data}catch(e){if(show)document.querySelector('#save-status').textContent='Could not save: browser storage unavailable.';return null}}
-function loadData(d){if(!d||d.version!==3)throw Error('This is not a compatible Wildlands save.');player.pos.fromArray(d.pos);player.yaw=d.yaw||0;player.hp=d.hp??100;player.stamina=d.stamina??100;player.hunger=d.hunger??100;Object.assign(inv,d.inv||{});dayTime=d.dayTime||480;quest=clamp(d.quest||0,0,quests.length-1);setQuest(quest);for(const p of pickups)scene.remove(p.group);pickups.length=0;for(const p of d.pickups||[])addPickup(p.type,p.n,p.x,p.z);for(let i=0;i<animals.length;i++){const a=animals[i],v=d.animals?.[i];if(v){a.g.position.set(v.x,heightAt(v.x,v.z),v.z);a.hp=v.hp;a.state=v.state||'wander';a.g.visible=v.alive}}for(const b of built)scene.remove(b);built.length=0;for(const v of d.built||[]){const o=buildObject(v.type);o.userData.type=v.type;o.position.set(v.x,heightAt(v.x,v.z),v.z);o.rotation.y=v.rotation||0;scene.add(o);built.push(o)}camera.position.copy(player.pos)}function loadLocal(){const d=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(!d)return false;loadData(d);return true}
-const toastEl=document.querySelector('#toast');function toast(msg){toastEl.textContent=msg;toastEl.classList.add('on');toastTimer=2.3}let audio;function tone(f=180,d=.12,type='sine',vol=.03){try{audio||=new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+d);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+d)}catch{}}function noise(d=.18,vol=.035){try{audio||=new(window.AudioContext||window.webkitAudioContext)();const n=audio.createBufferSource(),b=audio.createBuffer(1,audio.sampleRate*d,audio.sampleRate),v=b.getChannelData(0);for(let i=0;i<v.length;i++)v[i]=(rnd()*2-1)*(1-i/v.length);const g=audio.createGain();g.gain.value=vol;n.buffer=b;n.connect(g);g.connect(audio.destination);n.start()}catch{}}
-function screen(id,on){document.getElementById(id).classList.toggle('show',on)}function lock(){renderer.domElement.requestPointerLock?.()}function startGame(newGame){if(newGame){localStorage.removeItem(SAVE_KEY);location.reload();return}if(!loadLocal()){toast('No saved expedition found');return}started=true;paused=false;document.querySelector('#start').classList.add('hide');lock();tone(180,.2,'triangle');toast('Expedition restored')}
-document.querySelector('#new-game').onclick=()=>startGame(true);document.querySelector('#continue').onclick=()=>startGame(false);document.querySelector('#save-game').onclick=()=>save(true);document.querySelector('#download-save').onclick=()=>{const d=save(false);if(!d)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));a.download='wildlands-expedition.json';a.click();URL.revokeObjectURL(a.href);document.querySelector('#save-status').textContent='Save file exported.'};document.querySelector('#import-open').onclick=()=>document.querySelector('#import-file').click();document.querySelector('#import-pause').onclick=()=>document.querySelector('#import-file').click();document.querySelector('#import-file').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());loadData(d);save(false);started=true;paused=false;document.querySelector('#start').classList.add('hide');screen('pause',false);lock();toast('Save imported')}catch(err){alert(err.message||'Could not import save')}};document.querySelector('#to-title').onclick=()=>{save(false);document.exitPointerLock?.();screen('pause',false);started=false;document.querySelector('#start').classList.remove('hide')};document.querySelector('#death-restart').onclick=()=>startGame(true);document.querySelector('#death-title').onclick=()=>{screen('death',false);started=false;document.querySelector('#start').classList.remove('hide')};document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{screen(b.dataset.close,false);paused=false;lock()});
-function toggleScreen(id){const open=!document.getElementById(id).classList.contains('show');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));if(open){paused=true;screen(id,true);document.exitPointerLock?.();if(id==='inventory')renderInventory();if(id==='crafting')renderCraft()}else{paused=false;lock()}}const keys={};document.addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();if(!started)return;if(e.code==='Escape'){if(document.querySelector('.screen.show')){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('show'));paused=false;lock()}else toggleScreen('pause')}if(e.code==='KeyI')toggleScreen('inventory');if(e.code==='KeyC'||e.code==='KeyB')toggleScreen('crafting');if(e.code==='Digit1')equip('knife');if(e.code==='Digit2')equip('bow');if(e.code==='Digit3')equip('rifle');if(e.code==='KeyE')interact()});document.addEventListener('keyup',e=>keys[e.code]=false);let locked=false;document.addEventListener('pointerlockchange',()=>{locked=document.pointerLockElement===renderer.domElement;if(started&&!locked&&!paused&&player.alive){paused=true;screen('pause',true)}});document.addEventListener('mousemove',e=>{if(locked&&!paused){player.yaw-=e.movementX*.0022;player.pitch=clamp(player.pitch-e.movementY*.0018,-1.25,1.25)}});renderer.domElement.addEventListener('click',()=>{if(started&&!locked&&!paused)lock()});document.addEventListener('mousedown',e=>{if(e.button===0&&started&&!paused&&locked)useWeapon()});
-function equip(w){weapon=w;knifeMesh.visible=w==='knife';bow.visible=w==='bow';rifle.visible=w==='rifle';arm.visible=true;toast(`${w.toUpperCase()} equipped`)}
-function renderInventory(){const el=document.querySelector('#inventory-list');el.innerHTML='';for(const[k,v]of Object.entries(inv)){const d=document.createElement('div');d.className='slot';d.innerHTML=`${labels[k]} <b style="float:right">${v}</b><small>${k==='arrows'||k==='bullets'?'Ammunition':k==='radio'?'Rescue objective item':'Gathered wilderness supply'}</small>`;el.append(d)}}
-const recipes=[{name:'Craft 3 arrows',needs:{wood:1,fiber:1},gives:{arrows:3},desc:'Quiet hunting ammunition.'},{name:'Make a bandage',needs:{fiber:3},gives:{bandage:1},desc:'Restore 35 health with F.'},{name:'Build campfire',needs:{wood:5,stone:3},build:'campfire',desc:'Warmth and a place to cook meat.'},{name:'Build lean-to',needs:{wood:8,fiber:4},build:'shelter',desc:'A shelter that marks your camp.'},{name:'Craft rifle rounds x4',needs:{stone:2,wood:1},gives:{bullets:4},desc:'Scarce, loud ammunition for emergencies.'}];function renderCraft(){const el=document.querySelector('#craft-list');el.innerHTML='';for(const r of recipes){const row=document.createElement('div');row.className='row';row.innerHTML=`<div><b>${r.name}</b><small>${r.desc}<br>Needs: ${Object.entries(r.needs).map(([k,v])=>`${labels[k]} ${v}`).join(' · ')}</small></div><button>${r.build?'BUILD':'CRAFT'}</button>`;row.querySelector('button').onclick=()=>craft(r);el.append(row)}}function craft(r){if(Object.entries(r.needs).some(([k,v])=>(inv[k]||0)<v)){toast('Not enough materials');tone(90,.1,'square');return}for(const[k,v]of Object.entries(r.needs))inv[k]-=v;if(r.gives)for(const[k,v]of Object.entries(r.gives))inv[k]=(inv[k]||0)+v;if(r.build){const f=new THREE.Vector3(-Math.sin(player.yaw),0,-Math.cos(player.yaw)),x=player.pos.x+f.x*3,z=player.pos.z+f.z*3,o=buildObject(r.build);o.userData.type=r.build;o.position.set(x,heightAt(x,z),z);o.rotation.y=player.yaw;scene.add(o);built.push(o);toast(`${r.name} complete`);if(r.build==='campfire'&&quest===3){setQuest(4)}}else toast(`${r.name} complete`);tone(410,.12,'triangle');renderCraft();save(false)}
-const raycaster=new THREE.Raycaster();function findTarget(){const dir=new THREE.Vector3(-Math.sin(player.yaw),0,-Math.cos(player.yaw));let best=null,bestD=4.2;for(const p of pickups){const d=p.group.position.clone().sub(player.pos).length();if(d<bestD){const toward=p.group.position.clone().sub(player.pos).normalize();if(toward.dot(dir)>.15){best={type:'pickup',obj:p,d};bestD=d}}}const wd=player.pos.distanceTo(wreck.position);if(wd<7&&wd<bestD+3)return{type:'wreck',d:wd};for(const a of animals){if(!a.g.visible)continue;const d=player.pos.distanceTo(a.g.position);if(d<2.8&&d<bestD)return{type:'animal',obj:a,d}}return best}
-function interact(){if(!started||paused)return;const t=findTarget();if(!t){toast('Nothing close enough to interact with');return}if(t.type==='pickup'){const p=t.obj;inv[p.type]=(inv[p.type]||0)+p.n;scene.remove(p.group);pickups.splice(pickups.indexOf(p),1);toast(`Picked up ${p.n} ${labels[p.type]}`);tone(500,.08);if(quest===2&&inv.wood>=5&&inv.stone>=3&&inv.fiber>=2)setQuest(3);save(false);return}if(t.type==='wreck'){if(quest===0){setQuest(1);toast('Crash site reached · search for radio')}else if(quest===1){inv.radio=1;inv.arrows+=4;inv.bandage+=1;setQuest(2);toast('Radio recovered · supplies found')}else if(quest===5){toast('Emergency beacon transmitting · rescue signal sent');tone(660,.6,'sine',.055);setQuest(5)}else toast('You searched the wreckage');save(false);return}if(t.type==='animal'&&t.obj.kind==='deer'){toast('A wary deer. Hunt with your bow from a distance.')}else toast('Keep your distance from wildlife')}
-function hitAnimal(range,damage,noiseRadius){const dir=new THREE.Vector3();camera.getWorldDirection(dir);let target=null,score=range;for(const a of animals){if(!a.g.visible)continue;const point=a.g.position.clone().add(new THREE.Vector3(0,1,0)),delta=point.clone().sub(camera.position),d=delta.length();if(d<score&&delta.normalize().dot(dir)>.86){score=d;target=a}}if(target){target.hp-=damage;target.state=target.kind==='deer'?'flee':'attack';target.g.userData.lastNoise=noiseRadius;if(target.hp<=0){target.g.visible=false;target.dead=true;inv.meat+=(target.kind==='bear'?4:target.kind==='deer'?3:2);toast(`${target.kind.toUpperCase()} hunted · meat added`)}else toast(`${target.kind.toUpperCase()} hit`);return true}return false}
-function useWeapon(){if(shotCooldown>0)return;const cool={knife:.55,bow:.82,rifle:.65}[weapon];shotCooldown=cool;if(weapon==='knife'){noise(.12,.04);if(!hitAnimal(2.7,1,0))toast('Knife swing missed');return}if(weapon==='bow'){if(inv.arrows<=0){toast('Out of arrows · craft or find supplies');return}inv.arrows--;tone(330,.12,'triangle',.04);noise(.16,.025);if(!hitAnimal(48,2,12))toast('Arrow loosed');return}if(inv.bullets<=0){toast('Rifle empty · craft rounds or find ammo');return}inv.bullets--;tone(95,.22,'sawtooth',.09);noise(.32,.08);if(!hitAnimal(95,4,90))toast('Shot fired · the sound carries');else toast('Rifle hit · other animals may hear you')}
-function eat(){if(inv.berries>0){inv.berries--;player.hunger=clamp(player.hunger+24,0,100);toast('Ate wild berries')}else if(inv.meat>0&&built.some(b=>b.userData.type==='campfire')){inv.meat--;player.hunger=clamp(player.hunger+40,0,100);player.hp=clamp(player.hp+8,0,100);toast('Cooked meat restored strength')}else toast('Need berries, or a campfire to cook meat')}function bandage(){if(inv.bandage&&player.hp<100){inv.bandage--;player.hp=clamp(player.hp+35,0,100);toast('Bandage applied')}else toast('No bandage, or health is full')}
-function updateAnimals(dt,time){for(const a of animals){if(!a.g.visible)continue;const g=a.g,dx=player.pos.x-g.position.x,dz=player.pos.z-g.position.z,d=Math.hypot(dx,dz);a.timer-=dt;a.attack=Math.max(0,a.attack-dt);const loud=d<(g.userData.lastNoise||0);if(loud)g.userData.lastNoise=0;if(a.kind==='wolf'&&(d<25||loud))a.state=d<11?'attack':'alert';if(a.kind==='bear'&&(d<14||loud))a.state=d<6?'attack':'alert';if(a.kind==='boar'&&(d<13||loud))a.state=d<7?'attack':'alert';if(a.kind==='deer'&&d<18)a.state='flee';if(a.state==='attack'&&d<(a.kind==='bear'?2.2:1.7)){if(a.attack<=0){player.hp-=a.kind==='bear'?16:a.kind==='boar'?12:9;a.attack=a.kind==='bear'?1.35:1.1;noise(.18,.05);tone(65,.18,'sawtooth',.045);toast(`${a.kind.toUpperCase()} ATTACK · GET AWAY`);if(player.hp<=0)die()}}let speed=0;if(a.state==='attack'&&d>1.3){g.position.x+=dx/Math.max(1,d)*a.speed*dt;g.position.z+=dz/Math.max(1,d)*a.speed*dt;g.rotation.y=Math.atan2(dx,dz);speed=a.speed}else if(a.state==='flee'&&d<30){g.position.x-=dx/Math.max(1,d)*a.speed*1.7*dt;g.position.z-=dz/Math.max(1,d)*a.speed*1.7*dt;speed=a.speed*1.7}else{if(a.state==='alert'&&d>28)a.state='wander';if(a.timer<=0){a.dir=rnd()*6.28;a.timer=2+rnd()*6}if(a.state==='wander'){g.position.x+=Math.sin(a.dir)*.4*dt;g.position.z+=Math.cos(a.dir)*.4*dt;g.rotation.y=a.dir;speed=.4}}g.position.y=heightAt(g.position.x,g.position.z);g.children.forEach((c,i)=>{if(i>1)c.rotation.x=Math.sin(time*8+i)*Math.min(.4,speed*.2)})}}
-function die(){if(!player.alive)return;player.alive=false;document.exitPointerLock?.();screen('death',true);document.querySelector('#death-message').textContent=`You survived ${Math.floor(dayTime/1440)+1} day(s). Your last expedition was saved automatically.`;tone(60,.7,'sawtooth',.06);save(false)}
-function updateHUD(){for(const[id,v]of[['hp',player.hp],['stam',player.stamina],['food',player.hunger]])document.getElementById(id).style.width=v+'%';document.querySelector('#hpv').textContent=Math.ceil(player.hp);document.querySelector('#stamv').textContent=Math.ceil(player.stamina);document.querySelector('#foodv').textContent=Math.ceil(player.hunger);document.querySelector('#ammo').textContent=weapon==='rifle'?`RIFLE ${inv.bullets}`:`ARROWS ${inv.arrows}`;document.querySelector('#day').textContent=String(Math.floor(dayTime/1440)+1).padStart(2,'0');const m=Math.floor(dayTime%1440);document.querySelector('#clock').textContent=`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;document.querySelector('#coords').textContent=`${Math.round(player.pos.x)} / ${Math.round(player.pos.z)} · ${weapon.toUpperCase()}`}
-function update(dt,time){if(!started||paused||!player.alive)return;dayTime+=dt*2.7;shotCooldown=Math.max(0,shotCooldown-dt);let f=new THREE.Vector3(-Math.sin(player.yaw),0,-Math.cos(player.yaw)),r=new THREE.Vector3(Math.cos(player.yaw),0,-Math.sin(player.yaw)),move=new THREE.Vector3();if(keys.KeyW)move.add(f);if(keys.KeyS)move.sub(f);if(keys.KeyD)move.add(r);if(keys.KeyA)move.sub(r);if(move.lengthSq())move.normalize();const sprint=(keys.ShiftLeft||keys.ShiftRight)&&move.lengthSq()>0&&player.stamina>0,speed=sprint?8:4.15;if(move.lengthSq()){player.pos.addScaledVector(move,speed*dt);player.stamina=clamp(player.stamina-(sprint?22:-9)*dt,0,100)}else player.stamina=clamp(player.stamina+13*dt,0,100);if(keys.Space&&player.pos.y<=heightAt(player.pos.x,player.pos.z)+1.73)player.vy=5;player.vy-=14*dt;player.pos.y+=player.vy*dt;const floor=heightAt(player.pos.x,player.pos.z)+1.73;if(player.pos.y<floor){player.pos.y=floor;player.vy=0}player.pos.x=clamp(player.pos.x,-350,350);player.pos.z=clamp(player.pos.z,-350,350);camera.position.copy(player.pos);camera.rotation.order='YXZ';camera.rotation.y=player.yaw;camera.rotation.x=player.pitch;camera.position.y+=Math.sin(time*(sprint?13:8))*.018*(move.lengthSq()?1:0);player.hunger=clamp(player.hunger-dt*.17,0,100);if(player.hunger<12)player.hp=clamp(player.hp-dt*.45,0,100);updateAnimals(dt,time);for(const p of pickups){p.group.rotation.y+=dt*.7;p.group.position.y=heightAt(p.group.position.x,p.group.position.z)+.1+Math.sin(time*2+p.group.position.x)*.07}smoke.forEach((m,i)=>{m.position.set(42+Math.sin(time*.4+i)*.7,3+(time*.7+i*.48)%16,8+Math.cos(time*.3+i)*.5);m.material.opacity=.13*(1-(m.position.y-3)/20)});for(const b of built)if(b.userData.flame)b.userData.flame.scale.y=.7+Math.sin(time*13)*.25;if(grassMat.userData.shader)grassMat.userData.shader.uniforms.windTime.value=time;const phase=dayTime/1440*Math.PI*2-Math.PI/2,light=clamp(Math.sin(phase)*.7+.35,.1,1);sun.position.set(Math.cos(phase)*130,Math.sin(phase)*155,45);sun.intensity=.22+light*2.15;hemi.intensity=.25+light;scene.fog.color.setHSL(.49,.12,.17+light*.37);scene.background.copy(scene.fog.color);renderer.toneMappingExposure=.78+light*.38;const t=findTarget(),hint=document.querySelector('#hint');hint.textContent=t?(t.type==='wreck'?'[ E ] SEARCH WRECK':t.type==='pickup'?`[ E ] PICK UP ${labels[t.obj.type].toUpperCase()}`:'[ E ] INTERACT'):'[ I ] PACK · [ C ] CRAFT · [ X ] EAT';hint.style.opacity=locked?.88:.5;if(quest===2&&inv.wood>=5&&inv.stone>=3&&inv.fiber>=2)setQuest(3);if(quest===4&&inv.berries===0&&inv.meat===0){}if(quest===4&&built.some(b=>b.userData.type==='campfire')){if(inv.meat>0||inv.berries>0)setQuest(5)}if(quest===5&&Math.floor(dayTime/1440)>0)toast('Return to the wreck and activate the radio');autosave+=dt;if(autosave>20){save(false);autosave=0}if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)toastEl.classList.remove('on')}updateHUD()}
-// Input convenience and reset-safe menus.
-document.addEventListener('keydown',e=>{if(!started||paused)return;if(e.code==='KeyX')eat();if(e.code==='KeyF')bandage();if(e.code==='KeyR'&&weapon==='rifle')toast(`Rifle rounds: ${inv.bullets}`)});
-let prev=performance.now(),elapsed=0;function frame(now){requestAnimationFrame(frame);const dt=Math.min((now-prev)/1000,.04);prev=now;elapsed+=dt;update(dt,elapsed);renderer.render(scene,camera)}requestAnimationFrame(frame);window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-</script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wildlands: Last Flight</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body, #game {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #18231c;
+      color: #eef0e2;
+      font: 14px Arial, sans-serif;
+    }
+    canvas { display: block; }
+
+    .hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(#0005, transparent 24%, transparent 72%, #0005);
+    }
+
+    .top {
+      position: absolute;
+      top: 15px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .panel {
+      background: #101812cc;
+      border: 1px solid #ffffff2b;
+      padding: 10px 12px;
+      backdrop-filter: blur(5px);
+    }
+
+    .logo {
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: .18em;
+    }
+
+    .logo small {
+      display: block;
+      margin-top: 4px;
+      color: #b5bcac;
+      font: 9px monospace;
+    }
+
+    .stats {
+      width: 205px;
+      font: 10px monospace;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .bar {
+      height: 6px;
+      flex: 1;
+      background: #ffffff25;
+    }
+
+    .bar i {
+      display: block;
+      height: 100%;
+      width: 100%;
+      background: #c9d79c;
+    }
+
+    .bar.hp i { background: #d78c70; }
+    .bar.food i { background: #d6b970; }
+
+    .objective {
+      position: absolute;
+      top: 103px;
+      left: 16px;
+      width: 230px;
+      font-size: 12px;
+    }
+
+    .objective b {
+      display: block;
+      color: #cad9a4;
+      font: 9px monospace;
+      letter-spacing: .14em;
+      margin-bottom: 8px;
+    }
+
+    .objective small {
+      display: block;
+      color: #bdc2b5;
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .cross {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 15px;
+      height: 15px;
+      transform: translate(-50%, -50%);
+    }
+
+    .cross:before, .cross:after {
+      content: '';
+      position: absolute;
+      background: white;
+      opacity: .85;
+    }
+
+    .cross:before { width: 1px; height: 15px; left: 7px; }
+    .cross:after { height: 1px; width: 15px; top: 7px; }
+
+    .bottom {
+      position: absolute;
+      bottom: 14px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      font: 9px monospace;
+      letter-spacing: .07em;
+      color: #e5e8dc;
+    }
+
+    .toast {
+      position: fixed;
+      z-index: 4;
+      top: 27%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #101812e8;
+      border: 1px solid #ffffff35;
+      padding: 10px 14px;
+      font: 10px monospace;
+      letter-spacing: .1em;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    .toast.show { opacity: 1; }
+
+    .overlay, .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      padding: 8vw;
+      background: linear-gradient(90deg, #080e0bd9, #080e0b55);
+    }
+
+    .overlay.hidden, .modal.hidden { display: none; }
+
+    .card {
+      width: min(540px, 92vw);
+      padding: 26px;
+      background: #101812e8;
+      border: 1px solid #ffffff30;
+      box-shadow: 0 20px 70px #0007;
+    }
+
+    .eyebrow {
+      font: 10px monospace;
+      letter-spacing: .16em;
+      color: #c9d79c;
+    }
+
+    h1 {
+      font-size: clamp(54px, 8vw, 88px);
+      line-height: .9;
+      letter-spacing: -.07em;
+      margin: 19px 0;
+    }
+
+    h1 em {
+      font-weight: 400;
+      color: #c9d79c;
+    }
+
+    p {
+      color: #c8ccbf;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    button {
+      border: 0;
+      background: #c9d79c;
+      color: #172019;
+      padding: 13px 15px;
+      font: bold 10px monospace;
+      letter-spacing: .1em;
+      cursor: pointer;
+      margin: 8px 8px 0 0;
+    }
+
+    button.secondary {
+      color: #edf0e2;
+      background: #26332a;
+      border: 1px solid #ffffff30;
+    }
+
+    .modal {
+      z-index: 6;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: #050906c9;
+    }
+
+    .sheet {
+      width: min(600px, 94vw);
+      max-height: 85vh;
+      overflow: auto;
+      background: #111a14;
+      border: 1px solid #ffffff35;
+      padding: 22px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border: 1px solid #ffffff20;
+      background: #ffffff08;
+      margin: 8px 0;
+    }
+
+    .row small { color: #b4bdad; }
+
+    .error { color: #ffd2bb; }
+
+    @media (max-width: 650px) {
+      .top { left: 8px; right: 8px; }
+      .objective { left: 8px; top: 95px; width: 190px; }
+      .stats { width: 170px; }
+      .bottom { left: 8px; right: 8px; font-size: 8px; }
+      .bottom span:nth-child(2) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+
+  <div class="hud">
+    <div class="top">
+      <div class="panel logo">
+        WILDLANDS
+        <small>LAST FLIGHT · SURVIVAL</small>
+      </div>
+
+      <div class="panel stats">
+        <div class="stat">
+          HEALTH
+          <div class="bar hp"><i id="hpbar"></i></div>
+          <b id="hpnum">100</b>
+        </div>
+
+        <div class="stat">
+          STAMINA
+          <div class="bar"><i id="stambar"></i></div>
+          <b id="stamnum">100</b>
+        </div>
+
+        <div class="stat">
+          HUNGER
+          <div class="bar food"><i id="foodbar"></i></div>
+          <b id="foodnum">100</b>
+        </div>
+
+        <div id="day" style="border-top:1px solid #ffffff25;padding-top:6px;margin-top:7px">
+          DAY 01 · 08:00
+        </div>
+      </div>
+    </div>
+
+    <div class="panel objective">
+      <b>FIELD OBJECTIVE</b>
+      <strong id="quest">Reach the crash site</strong>
+      <small id="questdesc">Follow the smoke plume through the forest.</small>
+    </div>
+
+    <div class="cross"></div>
+
+    <div class="bottom">
+      <span>WASD MOVE · SHIFT SPRINT · MOUSE LOOK · SPACE JUMP</span>
+      <span>E PICK UP · LEFT CLICK ATTACK · I INVENTORY · C CRAFT · ESC MENU</span>
+      <span id="weapon-label">KNIFE</span>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <div id="intro" class="overlay">
+    <div class="card">
+      <div class="eyebrow">CASCADE WILDERNESS · FIELD JOURNAL 01</div>
+      <h1>LAST<br><em>FLIGHT.</em></h1>
+      <p>
+        Your charter plane crashed in the mountains. Find the wreck, recover the radio,
+        gather supplies, build a camp, and survive the wildlife long enough to signal for rescue.
+      </p>
+
+      <button id="start">START NEW EXPEDITION</button>
+      <button id="continue" class="secondary">CONTINUE</button>
+
+      <p id="status" class="error"></p>
+      <p style="font:10px monospace">
+        WASD move · Shift sprint · Mouse look · E collect · I inventory · C craft · 1 knife / 2 bow · X eat · Esc menu
+      </p>
+    </div>
+  </div>
+
+  <div id="menu" class="modal hidden">
+    <div class="sheet">
+      <h2>Expedition menu</h2>
+      <p>Progress saves automatically in this browser.</p>
+      <button id="save">SAVE NOW</button>
+      <button id="resume" class="secondary">RESUME GAME</button>
+      <button id="title" class="secondary">RETURN TO TITLE</button>
+      <div id="menustatus"></div>
+    </div>
+  </div>
+
+  <div id="inventory" class="modal hidden">
+    <div class="sheet">
+      <h2>Field pack</h2>
+      <div id="invlist"></div>
+      <button class="close secondary">CLOSE</button>
+    </div>
+  </div>
+
+  <div id="crafting" class="modal hidden">
+    <div class="sheet">
+      <h2>Crafting</h2>
+      <div id="craftlist"></div>
+      <button class="close secondary">CLOSE</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.min.js"></script>
+  <script>
+    (() => {
+      'use strict';
+
+      const byId = id => document.getElementById(id);
+
+      if (!window.THREE) {
+        byId('status').textContent = 'The 3D engine did not load. Check your internet connection, then reopen this file.';
+        return;
+      }
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x9db6b0);
+      scene.fog = new THREE.FogExp2(0x9db6b0, 0.006);
+
+      const camera = new THREE.PerspectiveCamera(74, innerWidth / innerHeight, 0.1, 500);
+      const renderer = new THREE.WebGLRenderer({
+        antialias: false,
+        powerPreference: 'high-performance'
+      });
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 1.4));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+      byId('game').appendChild(renderer.domElement);
+
+      const random = (() => {
+        let s = 71723;
+        return () => {
+          s = (s * 48271) % 2147483647;
+          return (s - 1) / 2147483646;
+        };
+      })();
+
+      function groundY(x, z) {
+        return Math.sin(x * 0.022) * 2 + Math.cos(z * 0.019) * 2.1 + Math.sin((x + z) * 0.013) * 1.3;
+      }
+
+      function makeTex(base, bark) {
+        const c = document.createElement('canvas');
+        c.width = c.height = 256;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = base;
+        ctx.fillRect(0, 0, 256, 256);
+
+        for (let i = 0; i < 1300; i++) {
+          const a = random() * 256;
+          const b = random() * 256;
+          ctx.fillStyle = `rgba(${bark ? '25,20,14' : '48,58,39'}, ${random() * 0.2})`;
+
+          if (bark) {
+            ctx.fillRect(a, b, 1 + random() * 2, 4 + random() * 16);
+          } else {
+            ctx.beginPath();
+            ctx.ellipse(a, b, 2 + random() * 8, 2 + random() * 5, random() * 3, 0, 6.3);
+            ctx.fill();
+          }
+        }
+
+        const t = new THREE.CanvasTexture(c);
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.anisotropy = 4;
+        return t;
+      }
+
+      // Terrain
+      const world = 300;
+      const N = 110;
+      const verts = [];
+      const uv = [];
+      const idx = [];
+
+      for (let z = 0; z <= N; z++) {
+        for (let x = 0; x <= N; x++) {
+          const wx = (x / N - 0.5) * world;
+          const wz = (z / N - 0.5) * world;
+          verts.push(wx, groundY(wx, wz), wz);
+          uv.push((x / N) * 24, (z / N) * 24);
+
+          if (x < N && z < N) {
+            const a = z * (N + 1) + x;
+            const d = a + N + 1;
+            idx.push(a, d, a + 1, a + 1, d, d + 1);
+          }
+        }
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      geo.setIndex(idx);
+      geo.computeVertexNormals();
+
+      const land = new THREE.Mesh(
+        geo,
+        new THREE.MeshStandardMaterial({
+          map: makeTex('#59604a', false),
+          roughness: 1
+        })
+      );
+      land.receiveShadow = true;
+      scene.add(land);
+
+      const sky = new THREE.Mesh(
+        new THREE.SphereGeometry(400, 20, 14),
+        new THREE.MeshBasicMaterial({ color: 0x9db6b4, side: THREE.BackSide })
+      );
+      scene.add(sky);
+
+      const hemi = new THREE.HemisphereLight(0xc9d9d3, 0x414333, 1.15);
+      scene.add(hemi);
+
+      const sun = new THREE.DirectionalLight(0xffe6bf, 2);
+      sun.position.set(-80, 120, 40);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(1024, 1024);
+      sun.shadow.camera.left = -80;
+      sun.shadow.camera.right = 80;
+      sun.shadow.camera.top = 80;
+      sun.shadow.camera.bottom = -80;
+      scene.add(sun);
+
+      // Trees
+      const dummy = new THREE.Object3D();
+      const trunks = new THREE.InstancedMesh(
+        new THREE.CylinderGeometry(.22, .38, 1, 7),
+        new THREE.MeshStandardMaterial({ map: makeTex('#514638', true), roughness: 1 }),
+        400
+      );
+
+      const crowns = new THREE.InstancedMesh(
+        new THREE.ConeGeometry(1, 1.7, 7),
+        new THREE.MeshStandardMaterial({ color: 0x59724b, roughness: 1 }),
+        800
+      );
+
+      for (let i = 0; i < 400; i++) {
+        let x, z;
+        do {
+          x = (random() - 0.5) * 285;
+          z = (random() - 0.5) * 285;
+        } while (Math.hypot(x, z) < 13 || ((x > 19 && x < 43) && (z > -7 && z < 17)));
+
+        const y = groundY(x, z);
+        const h = 5 + random() * 8;
+
+        dummy.position.set(x, y + h * 0.33, z);
+        dummy.scale.set(.7 + random() * .6, h * .7, .7 + random() * .6);
+        dummy.rotation.y = random() * 6;
+        dummy.updateMatrix();
+        trunks.setMatrixAt(i, dummy.matrix);
+
+        for (let l = 0; l < 2; l++) {
+          dummy.position.set(x, y + h * 0.53 + l * h * 0.22, z);
+          dummy.scale.set(h * .22, h * .57, h * .22);
+          dummy.rotation.y = random() * 6;
+          dummy.updateMatrix();
+          crowns.setMatrixAt(i * 2 + l, dummy.matrix);
+        }
+      }
+
+      trunks.castShadow = true;
+      crowns.castShadow = true;
+      scene.add(trunks, crowns);
+
+      // Wreckage
+      const wreck = new THREE.Group();
+      wreck.position.set(30, groundY(30, 5), 5);
+      wreck.rotation.y = -0.4;
+
+      const metal = new THREE.MeshStandardMaterial({ color: 0xb5b7a9, metalness: 0.4, roughness: 0.65 });
+      const orange = new THREE.MeshStandardMaterial({ color: 0xa8623d });
+
+      function part(g, m, p, r = [0, 0, 0]) {
+        const o = new THREE.Mesh(g, m);
+        o.position.set(...p);
+        o.rotation.set(...r);
+        o.castShadow = true;
+        wreck.add(o);
+      }
+
+      part(new THREE.CylinderGeometry(.75, 1, 10, 9, 1, true), metal, [0, 1.1, 0], [0, 0, Math.PI / 2]);
+      part(new THREE.ConeGeometry(.7, 2, 9), metal, [6, 1.2, 0], [0, 0, -Math.PI / 2]);
+      part(new THREE.BoxGeometry(2, 6, .2), orange, [-1, 1, 0], [0, 0, .25]);
+
+      scene.add(wreck);
+
+      const smoke = [];
+      for (let i = 0; i < 15; i++) {
+        const s = new THREE.Mesh(
+          new THREE.SphereGeometry(.55 + random() * .5, 7, 7),
+          new THREE.MeshBasicMaterial({
+            color: 0x55584c,
+            transparent: true,
+            opacity: 0.2,
+            depthWrite: false
+          })
+        );
+        scene.add(s);
+        smoke.push(s);
+      }
+
+      // Player
+      const player = {
+        pos: new THREE.Vector3(0, groundY(0, 0) + 1.7, 0),
+        yaw: 0,
+        pitch: 0,
+        vy: 0,
+        hp: 100,
+        stam: 100,
+        hunger: 100
+      };
+
+      camera.position.copy(player.pos);
+      scene.add(camera);
+
+      const items = {
+        wood: 0,
+        stone: 0,
+        fiber: 0,
+        berries: 0,
+        meat: 0,
+        arrows: 5,
+        bandage: 1,
+        radio: 0,
+        campfire: 0
+      };
+
+      const names = {
+        wood: 'Wood',
+        stone: 'Stone',
+        fiber: 'Fiber',
+        berries: 'Berries',
+        meat: 'Meat',
+        arrows: 'Arrows',
+        bandage: 'Bandages',
+        radio: 'Radio',
+        campfire: 'Campfire'
+      };
+
+      const colors = {
+        wood: 0xa87a4d,
+        stone: 0xa7a99a,
+        fiber: 0x9db66e,
+        berries: 0xc95758,
+        arrows: 0xd9c38b,
+        bandage: 0xe9e5d6
+      };
+
+      const pickups = [];
+      function addPickup(type, n, x, z) {
+        const g = new THREE.Group();
+        const mesh = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(.2, 0),
+          new THREE.MeshStandardMaterial({
+            color: colors[type],
+            emissive: colors[type],
+            emissiveIntensity: 0.2
+          })
+        );
+        mesh.position.y = .35;
+        g.add(mesh);
+        g.position.set(x, groundY(x, z), z);
+        scene.add(g);
+        pickups.push({ type, n, g });
+      }
+
+      for (let i = 0; i < 100; i++) {
+        const x = (random() - 0.5) * 260;
+        const z = (random() - 0.5) * 260;
+
+        if (Math.hypot(x, z) > 9) {
+          const typeRoll = Math.floor(random() * 7);
+          const types = ['wood', 'wood', 'stone', 'fiber', 'berries', 'arrows', 'bandage'];
+          const type = types[typeRoll];
+          addPickup(type, 1 + Math.floor(random() * 2), x, z);
+        }
+      }
+
+      const animals = [];
+      function addAnimal(kind, x, z) {
+        const g = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({
+          color: kind === 'deer' ? 0x94724e : kind === 'wolf' ? 0x51534b : 0x40372f,
+          roughness: 1
+        });
+
+        const body = new THREE.Mesh(
+          new THREE.CapsuleGeometry(kind === 'bear' ? .5 : .34, kind === 'deer' ? .8 : .75, 3, 7),
+          mat
+        );
+        body.rotation.z = Math.PI / 2;
+        body.position.y = kind === 'deer' ? 1 : .75;
+        g.add(body);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(.25, 8, 7), mat);
+        head.position.set(.5, kind === 'deer' ? 1.45 : 1.05, 0);
+        g.add(head);
+
+        g.position.set(x, groundY(x, z), z);
+        scene.add(g);
+
+        animals.push({
+          kind,
+          g,
+          hp: kind === 'bear' ? 5 : kind === 'wolf' ? 3 : 1,
+          state: 'wander',
+          dir: random() * 6.28,
+          attack: 0,
+          speed: kind === 'bear' ? 1.6 : kind === 'wolf' ? 2.3 : 1.9
+        });
+      }
+
+      for (let i = 0; i < 12; i++) {
+        const a = random() * Math.PI * 2;
+        const r = 25 + random() * 100;
+        addAnimal(i < 4 ? 'wolf' : i < 7 ? 'deer' : 'bear', Math.cos(a) * r, Math.sin(a) * r);
+      }
+
+      let quest = 0;
+      let weapon = 'knife';
+      let started = false;
+      let paused = false;
+      let locked = false;
+      let toastTime = 0;
+      let shot = 0;
+      let elapsed = 0;
+
+      const questData = [
+        ['Reach the crash site', 'Follow the smoke plume through the forest.'],
+        ['Search the wreck', 'Press E beside the plane to recover its radio.'],
+        ['Gather supplies', 'Collect 5 wood, 3 stone, and 2 fiber.'],
+        ['Build a campfire', 'Press C and craft a campfire.'],
+        ['Find food', 'Collect berries or hunt wildlife.'],
+        ['Signal for rescue', 'Return to the wreck and press E.']
+      ];
+
+      function setQuest(q) {
+        quest = Math.min(q, questData.length - 1);
+        byId('quest').textContent = questData[quest][0];
+        byId('questdesc').textContent = questData[quest][1];
+      }
+
+      setQuest(0);
+
+      const key = 'wildlands-simple-save';
+
+      function save(silent = false) {
+        try {
+          const payload = {
+            p: {
+              x: player.pos.x,
+              y: player.pos.y,
+              z: player.pos.z,
+              yaw: player.yaw,
+              pitch: player.pitch,
+              hp: player.hp,
+              stam: player.stam,
+              hunger: player.hunger
+            },
+            items: { ...items },
+            quest,
+            weapon,
+            animals: animals.map(a => ({
+              kind: a.kind,
+              x: a.g.position.x,
+              z: a.g.position.z,
+              hp: a.hp,
+              visible: a.g.visible
+            })),
+            pickups: pickups.map(p => ({
+              type: p.type,
+              n: p.n,
+              x: p.g.position.x,
+              z: p.g.position.z
+            }))
+          };
+
+          localStorage.setItem(key, JSON.stringify(payload));
+
+          if (!silent) toast('GAME SAVED');
+        } catch (e) {
+          if (!silent) toast('SAVE UNAVAILABLE IN THIS BROWSER');
+        }
+      }
+
+      function load() {
+        try {
+          const d = JSON.parse(localStorage.getItem(key));
+          if (!d) return false;
+
+          player.pos.set(d.p.x, d.p.y, d.p.z);
+          player.yaw = d.p.yaw || 0;
+          player.pitch = d.p.pitch || 0;
+          player.hp = d.p.hp ?? 100;
+          player.stam = d.p.stam ?? 100;
+          player.hunger = d.p.hunger ?? 100;
+
+          Object.keys(items).forEach(k => {
+            items[k] = d.items?.[k] ?? 0;
+          });
+
+          setQuest(d.quest || 0);
+          weapon = d.weapon || 'knife';
+
+          if (Array.isArray(d.animals)) {
+            d.animals.forEach((v, i) => {
+              if (animals[i]) {
+                animals[i].g.position.set(v.x, groundY(v.x, v.z), v.z);
+                animals[i].hp = v.hp;
+                animals[i].g.visible = v.visible !== false;
+              }
+            });
+          }
+
+          if (Array.isArray(d.pickups)) {
+            pickups.forEach(p => scene.remove(p.g));
+            pickups.length = 0;
+
+            d.pickups.forEach(p => {
+              const g = new THREE.Group();
+              const mesh = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(.2, 0),
+                new THREE.MeshStandardMaterial({
+                  color: colors[p.type],
+                  emissive: colors[p.type],
+                  emissiveIntensity: 0.2
+                })
+              );
+              mesh.position.y = .35;
+              g.add(mesh);
+              g.position.set(p.x, groundY(p.x, p.z), p.z);
+              scene.add(g);
+              pickups.push({ type: p.type, n: p.n, g });
+            });
+          }
+
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function toast(text) {
+        const t = byId('toast');
+        t.textContent = text;
+        t.classList.add('show');
+        toastTime = 2;
+      }
+
+      function updateHUD() {
+        byId('hpbar').style.width = Math.max(0, player.hp) + '%';
+        byId('hpnum').textContent = Math.ceil(player.hp);
+
+        byId('stambar').style.width = Math.max(0, player.stam) + '%';
+        byId('stamnum').textContent = Math.ceil(player.stam);
+
+        byId('foodbar').style.width = Math.max(0, player.hunger) + '%';
+        byId('foodnum').textContent = Math.ceil(player.hunger);
+
+        byId('weapon-label').textContent = weapon.toUpperCase() + (weapon === 'bow' ? ' · ' + items.arrows : '');
+      }
+
+      function openModal(id) {
+        paused = true;
+        byId(id).classList.remove('hidden');
+        document.exitPointerLock?.();
+      }
+
+      function closeModal(id) {
+        byId(id).classList.add('hidden');
+        paused = false;
+        renderer.domElement.requestPointerLock?.();
+      }
+
+      function showInventory() {
+        const el = byId('invlist');
+        el.innerHTML = '';
+
+        for (const [k, v] of Object.entries(items)) {
+          if (k === 'radio' || k === 'campfire') {
+            if (v > 0) {
+              const row = document.createElement('div');
+              row.className = 'row';
+              row.innerHTML = `<span>${names[k]}</span><b>${v}</b>`;
+              el.appendChild(row);
+            }
+            continue;
+          }
+
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.innerHTML = `<span>${names[k]}</span><b>${v}</b>`;
+          el.appendChild(row);
+        }
+      }
+
+      function renderCraft() {
+        const host = byId('craftlist');
+        host.innerHTML = '';
+
+        const recipes = [
+          ['campfire', 'Build campfire', '5 wood · 3 stone'],
+          ['arrows', 'Craft 3 arrows', '1 wood · 1 fiber'],
+          ['bandage', 'Make bandage', '3 fiber']
+        ];
+
+        recipes.forEach(([id, label, need]) => {
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.innerHTML = `<span>${label}<br><small>${need}</small></span><button>MAKE</button>`;
+          row.querySelector('button').onclick = () => craft(id);
+          host.appendChild(row);
+        });
+      }
+
+      function craft(type) {
+        let req = {};
+        if (type === 'campfire') req = { wood: 5, stone: 3 };
+        else if (type === 'arrows') req = { wood: 1, fiber: 1 };
+        else if (type === 'bandage') req = { fiber: 3 };
+
+        const missing = Object.entries(req).some(([k, v]) => (items[k] ?? 0) < v);
+        if (missing) {
+          toast('NOT ENOUGH MATERIALS');
+          return;
+        }
+
+        Object.entries(req).forEach(([k, v]) => {
+          items[k] -= v;
+        });
+
+        if (type === 'campfire') {
+          items.campfire = 1;
+          setQuest(4);
+          toast('CAMPFIRE BUILT');
+        } else if (type === 'arrows') {
+          items.arrows += 3;
+          toast('ARROWS CRAFTED');
+        } else if (type === 'bandage') {
+          items.bandage += 1;
+          toast('BANDAGE MADE');
+        }
+
+        renderCraft();
+        save(true);
+      }
+
+      function startGame(isNew) {
+        if (isNew) {
+          player.pos.set(0, groundY(0, 0) + 1.7, 0);
+          player.yaw = 0;
+          player.pitch = 0;
+          player.vy = 0;
+          player.hp = 100;
+          player.stam = 100;
+          player.hunger = 100;
+
+          Object.keys(items).forEach(k => {
+            if (k === 'arrows') items[k] = 5;
+            else if (k === 'bandage') items[k] = 1;
+            else items[k] = 0;
+          });
+
+          animals.forEach(a => {
+            a.g.visible = true;
+            a.hp = a.kind === 'bear' ? 5 : a.kind === 'wolf' ? 3 : 1;
+          });
+
+          setQuest(0);
+          weapon = 'knife';
+          save(true);
+        } else {
+          if (!load()) {
+            byId('status').textContent = 'No save found yet. Choose Start New Expedition.';
+            return;
+          }
+        }
+
+        started = true;
+        paused = false;
+
+        byId('intro').classList.add('hidden');
+        renderer.domElement.requestPointerLock?.();
+        toast('EXPEDITION STARTED');
+      }
+
+      byId('start').onclick = () => startGame(true);
+      byId('continue').onclick = () => startGame(false);
+
+      byId('save').onclick = () => save(false);
+      byId('resume').onclick = () => closeModal('menu');
+      byId('title').onclick = () => {
+        save(true);
+        closeModal('menu');
+        started = false;
+        byId('intro').classList.remove('hidden');
+      };
+
+      document.querySelectorAll('.close').forEach((b) => {
+        b.onclick = () => {
+          b.closest('.modal').classList.add('hidden');
+          paused = false;
+          renderer.domElement.requestPointerLock?.();
+        };
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.code === 'Escape' && started) {
+          if (!byId('menu').classList.contains('hidden')) {
+            closeModal('menu');
+          } else {
+            openModal('menu');
+          }
+        }
+
+        if (!started || paused) return;
+
+        if (e.code === 'KeyI') {
+          showInventory();
+          openModal('inventory');
+        }
+
+        if (e.code === 'KeyC') {
+          renderCraft();
+          openModal('crafting');
+        }
+
+        if (e.code === 'Digit1') weapon = 'knife';
+        if (e.code === 'Digit2') weapon = 'bow';
+
+        if (e.code === 'KeyX' && (items.berries > 0)) {
+          items.berries -= 1;
+          player.hunger = Math.min(100, player.hunger + 25);
+          toast('ATE BERRIES');
+          save(true);
+        }
+
+        if (e.code === 'KeyF' && items.bandage > 0) {
+          items.bandage -= 1;
+          player.hp = Math.min(100, player.hp + 30);
+          toast('BANDAGE USED');
+          save(true);
+        }
+
+        if (e.code === 'KeyE') interact();
+      });
+
+      document.addEventListener('keyup', (e) => {
+        keys[e.code] = false;
+      });
+
+      const keys = {};
+      document.addEventListener('keydown', (e) => {
+        keys[e.code] = true;
+      });
+
+      document.addEventListener('pointerlockchange', () => {
+        locked = document.pointerLockElement === renderer.domElement;
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (locked && !paused) {
+          player.yaw -= e.movementX * 0.002;
+          player.pitch = THREE.MathUtils.clamp(player.pitch - e.movementY * 0.0017, -1.2, 1.2);
+        }
+      });
+
+      renderer.domElement.addEventListener('click', () => {
+        if (started && !locked && !paused) {
+          renderer.domElement.requestPointerLock?.();
+        }
+      });
+
+      function interact() {
+        let closest = null;
+        let closestDist = 2.8;
+
+        for (const p of pickups) {
+          const d = p.g.position.distanceTo(player.pos);
+          if (d < closestDist) {
+            closest = p;
+            closestDist = d;
+          }
+        }
+
+        if (closest) {
+          items[closest.type] = (items[closest.type] || 0) + closest.n;
+          scene.remove(closest.g);
+          pickups.splice(pickups.indexOf(closest), 1);
+          toast('COLLECTED ' + names[closest.type].toUpperCase());
+
+          if (quest === 2 && items.wood >= 5 && items.stone >= 3 && items.fiber >= 2) {
+            setQuest(3);
+          }
+
+          save(true);
+          return;
+        }
+
+        const wreckDist = player.pos.distanceTo(wreck.position);
+
+        if (wreckDist < 8) {
+          if (quest === 0) {
+            setQuest(1);
+            toast('CRASH SITE FOUND');
+          } else if (quest === 1) {
+            items.radio = 1;
+            items.arrows += 4;
+            items.bandage += 1;
+            setQuest(2);
+            toast('RADIO RECOVERED');
+          } else if (quest === 5) {
+            toast('RESCUE SIGNAL SENT');
+          } else {
+            toast('WRECK SEARCHED');
+          }
+
+          save(true);
+          return;
+        }
+
+        toast('NOTHING TO COLLECT');
+      }
+
+      function attack() {
+        if (shot > 0) return;
+
+        if (weapon === 'bow' && items.arrows <= 0) {
+          toast('NO ARROWS');
+          return;
+        }
+
+        shot = weapon === 'knife' ? 0.45 : 0.8;
+
+        if (weapon === 'bow') {
+          items.arrows -= 1;
+        }
+
+        const dir = new THREE.Vector3(
+          -Math.sin(player.yaw),
+          0,
+          -Math.cos(player.yaw)
+        );
+
+        let target = null;
+        let best = weapon === 'knife' ? 2.8 : 38;
+
+        for (const a of animals) {
+          if (!a.g.visible) continue;
+
+          const d = a.g.position.clone().sub(player.pos);
+          const len = d.length();
+
+          if (len < best && d.normalize().dot(dir) > 0.68) {
+            target = a;
+            best = len;
+          }
+        }
+
+        if (target) {
+          target.hp -= weapon === 'knife' ? 1 : 2;
+          target.state = target.kind === 'deer' ? 'flee' : 'attack';
+
+          if (target.hp <= 0) {
+            target.g.visible = false;
+            items.meat += target.kind === 'deer' ? 3 : 2;
+            toast('ANIMAL HUNTED · MEAT COLLECTED');
+
+            if (quest === 4 && (items.berries > 0 || items.meat > 0)) {
+              setQuest(5);
+            }
+          } else {
+            toast('HIT');
+          }
+        } else {
+          toast(weapon === 'knife' ? 'SWING MISSED' : 'SHOT FIRED');
+        }
+      }
+
+      document.addEventListener('mousedown', (e) => {
+        if (e.button === 0 && started && !paused) {
+          attack();
+        }
+      });
+
+      function update(dt) {
+        if (!started || paused) return;
+
+        shot = Math.max(0, shot - dt);
+
+        const f = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+        const r = new THREE.Vector3(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
+        const move = new THREE.Vector3();
+
+        if (keys.KeyW) move.add(f);
+        if (keys.KeyS) move.sub(f);
+        if (keys.KeyD) move.add(r);
+        if (keys.KeyA) move.sub(r);
+
+        if (move.lengthSq() > 0) move.normalize();
+
+        const sprint = (keys.ShiftLeft || keys.ShiftRight) && player.stam > 1 && move.lengthSq() > 0;
+
+        player.pos.addScaledVector(move, (sprint ? 7 : 4) * dt);
+
+        player.stam = THREE.MathUtils.clamp(
+          player.stam + (sprint ? -20 : 10) * dt,
+          0,
+          100
+        );
+
+        player.vy -= 14 * dt;
+
+        if (keys.Space && player.pos.y <= groundY(player.pos.x, player.pos.z) + 1.72) {
+          player.vy = 5;
+        }
+
+        player.pos.y += player.vy * dt;
+
+        const floorY = groundY(player.pos.x, player.pos.z) + 1.72;
+
+        if (player.pos.y < floorY) {
+          player.pos.y = floorY;
+          player.vy = 0;
+        }
+
+        player.pos.x = THREE.MathUtils.clamp(player.pos.x, -145, 145);
+        player.pos.z = THREE.MathUtils.clamp(player.pos.z, -145, 145);
+
+        camera.position.copy(player.pos);
+        camera.rotation.order = 'YXZ';
+        camera.rotation.y = player.yaw;
+        camera.rotation.x = player.pitch;
+
+        player.hunger = Math.max(0, player.hunger - dt * 0.12);
+        if (player.hunger <= 0) {
+          player.hp = Math.max(0, player.hp - dt * 0.4);
+        }
+
+        for (const a of animals) {
+          if (!a.g.visible) continue;
+
+          const dx = player.pos.x - a.g.position.x;
+          const dz = player.pos.z - a.g.position.z;
+          const dist = Math.hypot(dx, dz);
+
+          if (a.kind === 'deer') {
+            if (dist < 14) {
+              a.g.position.x -= (dx / Math.max(dist, 1)) * a.speed * dt;
+              a.g.position.z -= (dz / Math.max(dist, 1)) * a.speed * dt;
+            }
+          } else {
+            if (dist < 17) {
+              a.g.position.x += (dx / Math.max(dist, 1)) * a.speed * dt * 0.45;
+              a.g.position.z += (dz / Math.max(dist, 1)) * a.speed * dt * 0.45;
+
+              if (dist < 1.6) {
+                player.hp -= dt * (a.kind === 'bear' ? 10 : 6);
+              }
+            }
+          }
+
+          a.g.position.y = groundY(a.g.position.x, a.g.position.z);
+        }
+
+        for (const p of pickups) {
+          p.g.rotation.y += dt;
+          p.g.position.y = groundY(p.g.position.x, p.g.position.z) + .1 + Math.sin(elapsed * 2 + p.g.position.x) * .06;
+        }
+
+        for (let i = 0; i < smoke.length; i++) {
+          smoke[i].position.set(
+            30 + Math.sin(elapsed * 0.3 + i) * .5,
+            4 + (elapsed * 0.8 + i * 0.8) % 13,
+            5 + Math.cos(elapsed * 0.2 + i) * .5
+          );
+        }
+
+        if (quest === 2 && items.wood >= 5 && items.stone >= 3 && items.fiber >= 2) {
+          setQuest(3);
+        }
+
+        if (quest === 4 && (items.berries > 0 || items.meat > 0)) {
+          setQuest(5);
+        }
+
+        if (quest === 0 && player.pos.distanceTo(wreck.position) < 11) {
+          setQuest(1);
+        }
+
+        if (quest === 5 && player.pos.distanceTo(wreck.position) < 8 && items.radio) {
+          toast('RESCUE SIGNAL ACTIVE');
+          setQuest(5);
+        }
+
+        if (player.hp <= 0) {
+          started = false;
+          byId('intro').classList.remove('hidden');
+          byId('status').textContent = 'Your expedition ended. Click Start New Expedition to try again.';
+        }
+
+        if (elapsed % 20 < dt) {
+          save(true);
+        }
+
+        updateHUD();
+
+        if (toastTime > 0) {
+          toastTime -= dt;
+          if (toastTime <= 0) {
+            byId('toast').classList.remove('show');
+          }
+        }
+      }
+
+      let last = performance.now();
+
+      function frame(now) {
+        requestAnimationFrame(frame);
+
+        const dt = Math.min((now - last) / 1000, 0.04);
+        last = now;
+        elapsed += dt;
+
+        const day = Math.sin(elapsed * 0.025) * 0.5 + 0.5;
+
+        sun.intensity = 0.35 + day * 1.9;
+        hemi.intensity = 0.4 + day * 0.8;
+
+        update(dt);
+        renderer.render(scene, camera);
+      }
+
+      requestAnimationFrame(frame);
+
+      window.addEventListener('resize', () => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+      });
+
+      updateHUD();
+    })();
+  </script>
+</body>
+</html>
